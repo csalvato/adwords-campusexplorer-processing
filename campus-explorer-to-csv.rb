@@ -5,6 +5,12 @@ puts "Starting Script..."
 
 require 'csv'
 
+class String
+  def string_between_markers marker1, marker2
+    self[/#{Regexp.escape(marker1)}(.*?)#{Regexp.escape(marker2)}/m, 1]
+  end
+end
+
 # Processes a CE data **CSV** File into output
 def process_ce_csv (input_filename, output_filename)
 	CSV.open(output_filename, "wb") do |csv|
@@ -13,7 +19,7 @@ def process_ce_csv (input_filename, output_filename)
 		# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
 		# Is there data?
 			if has_campusexplorer_data? row
-				process_source_code row["Source Code"]
+				puts process_source_code row["Source Code"]
 				# Write ALL values out to processed CSV file
 			end
 		end
@@ -46,24 +52,19 @@ end
 
 def process_source_code (sourcecode)
 	
-	# utm_campaign = _src*adwords_x*205882121_d*mb_d2*{ifmobile:mb}{ifnotmobile:dt}_k*{keyword}_m*{matchtype}_c*{creative}_p*{adposition}_n*{network}&utm_source=Google&utm_medium=cpc
-		# => Area of Study
-		# => concentration
-		# => seed
-		# => sublocation
-		# => Location Code
-		# => headline
-		# => Broken data? (Does it have {} in the URL?)
-		# => LP Parameter
-		# => Source Parameter
-		# => Campaign ID (and decode back to campaign name)
-		# => Desktop/Mobile values
-		# => Second Desktop/Mobile Value
-		# => Keyword
-		# => Match Type?
-		# => creative
-		# => Ad position
-		# => Network
+	{ 	
+		lp: (sourcecode.string_between_markers "lp*", "_"),
+		source: (sourcecode.string_between_markers "src*", "_"),
+		campaign_id: (sourcecode.string_between_markers "x*", "_"),
+		device: (sourcecode.string_between_markers "d*", "_"),
+		device2: (sourcecode.string_between_markers "d2*", "_"),
+		keyword: (sourcecode.string_between_markers "k*", "_"),
+		match: (sourcecode.string_between_markers "m*", "_"),
+		creative: (sourcecode.string_between_markers "c*", "_"),
+		ad_position: (sourcecode.string_between_markers "p*", "_"),
+		network: (sourcecode[/n\*(.+)/m, 1])
+	}
+
 end
 
 input_filename = get_input_filename
