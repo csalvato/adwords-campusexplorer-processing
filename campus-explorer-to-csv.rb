@@ -7,29 +7,77 @@ require 'csv'
 
 class String
   def string_between_markers marker1, marker2
-    self[/#{Regexp.escape(marker1)}(.*?)#{Regexp.escape(marker2)}/m, 1]
+    self[/#{Regexp.escape(marker1)}(.*?)(#{Regexp.escape(marker2)}|\z)/m, 1]
   end
 end
 
 # Processes a CE data **CSV** File into output
 def process_ce_csv (input_filename, output_filename)
 	CSV.open(output_filename, "wb") do |csv|
-	# For each row from Campus Explorer CSV File
+		# Create Header Row
+		csv << ["Date",
+				"Widget Impressions",
+				"Lead Request Users",
+				"Lead Users",
+				"Leads",
+				"Clickout Impressions",
+				"Clickouts",
+				"Lead Revenue",
+				"Clickout Revenue",
+				"Total Revenue",
+				"Landing Page",
+				"Source",
+				"Campaign ID",
+				"Device",
+				"Device2",
+				"Keyword",
+				"Match",
+				"Creative",
+				"Ad Page",
+				"Ad Top/Side",
+				"Ad Position",
+				"Network",
+				"Widget Location"]
+		# For each row from Campus Explorer CSV File
 		CSV.foreach(input_filename, :headers => true, :return_headers => false, :encoding => 'windows-1251:utf-8') do |row|
-		# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
-		# Is there data?
-			if has_campusexplorer_data? row
-				puts process_source_code row["Source Code"]
+			# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
+			source_data = process_source_code row["Source Code"]
+			# Is there data?
+			if has_campusexplorer_data? row, source_data
 				# Write ALL values out to processed CSV file
+				csv << [row["Grouping"],
+						row["Widget Impressions"],
+						row["Lead Request Users"],
+						row["Lead Users"],
+						row["Leads"],
+						row["Clickout Impressions"],
+						row["Clickouts"],
+						row["Unreconciled Publisher Lead Revenue"],
+						row["Unreconciled Publisher Clickout Revenue"],
+						row["Unreconciled Publisher Total Revenue"],
+						source_data[:lp],
+						source_data[:source],
+						source_data[:campaign_id],
+						source_data[:device],
+						source_data[:device2],
+						source_data[:keyword],
+						source_data[:match],
+						source_data[:creative],
+						source_data[:ad_page],
+						source_data[:ad_top_side],
+						source_data[:ad_position],
+						source_data[:network],
+						source_data[:widget_location]
+						]
 			end
 		end
 	end
 end
 
-def has_campusexplorer_data? (row)
-	# => YES -> If there's revenue and a source code (maybe it's if there is any utm_campaign string appended at all?)	
-	row["Unreconciled Publisher Total Revenue"].to_f > 0 &&
-	!row["Source Code"].empty?
+def has_campusexplorer_data? (row, source_data)
+	# => YES -> if source parameter is set and is adwords
+	# row["Unreconciled Publisher Total Revenue"].to_f > 0 &&
+	source_data[:source] == "adwords"
 end
 
 def get_input_filename
@@ -52,17 +100,58 @@ end
 
 def process_source_code (sourcecode)
 	
+	# Decode Match Type
+	match_type = sourcecode.string_between_markers "_m*", "_"
+	case match_type
+	when "e"
+		match_type = "Exact"
+	when "p"
+		match_type = "Phrase"
+	when "b"
+		match_type = "Broad"
+	end
+
+	# Break down ad position
+	position_data = sourcecode.string_between_markers "_p*", "_"
+	device = sourcecode.string_between_markers "_d*", "_"
+	unless position_data.nil? || position_data == "none"
+		ad_page = position_data[0]
+		ad_position = position_data[2]
+		ad_top_side = position_data[1]
+		case ad_top_side
+		when "t"
+			ad_top_side = "Top"
+		when "s"
+			ad_top_side = "Side"
+		when "o"			
+			ad_top_side = "Other"
+			ad_top_side = "Bottom"  if device == "dt"
+			ad_top_side = "Mobile" if device == "mb"
+		end
+	end
+
+	# Set Widget Location
+	if sourcecode.include? "RightSidebar"
+		widget_location = "Right Sidebar"
+	elsif sourcecode.include? "ContentCTA"
+		widget_location = "Content CTA Lightbox"
+	end
+			
+
 	{ 	
-		lp: (sourcecode.string_between_markers "lp*", "_"),
-		source: (sourcecode.string_between_markers "src*", "_"),
-		campaign_id: (sourcecode.string_between_markers "x*", "_"),
-		device: (sourcecode.string_between_markers "d*", "_"),
-		device2: (sourcecode.string_between_markers "d2*", "_"),
-		keyword: (sourcecode.string_between_markers "k*", "_"),
-		match: (sourcecode.string_between_markers "m*", "_"),
-		creative: (sourcecode.string_between_markers "c*", "_"),
-		ad_position: (sourcecode.string_between_markers "p*", "_"),
-		network: (sourcecode[/n\*(.+)/m, 1])
+		lp: (sourcecode.string_between_markers "-lp*", "_"),
+		source: (sourcecode.string_between_markers "_src*", "_"),
+		campaign_id: (sourcecode.string_between_markers "_x*", "_"),
+		device: device,
+		device2: (sourcecode.string_between_markers "_d2*", "_"),
+		keyword: (sourcecode.string_between_markers "_k*", "_"),
+		match: match_type,
+		creative: (sourcecode.string_between_markers "_c*", "_"),
+		ad_page: ad_page,
+		ad_top_side: ad_top_side,
+		ad_position: ad_position,
+		network: (sourcecode.string_between_markers "_n*", "_"),
+		widget_location: widget_location
 	}
 
 end
