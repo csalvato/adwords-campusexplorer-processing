@@ -88,7 +88,6 @@ def process_adwords_data_file (input_filename, output_filename)
 	# Convert to CSV
 	adwords_csv_filename = "adwords-prepped.csv"
 	adwords_tsv_to_csv input_filename, adwords_csv_filename
-
 	CSV.open(output_filename, "wb") do |csv|
 		# Create Header Row
 		csv << ["Date",
@@ -103,8 +102,11 @@ def process_adwords_data_file (input_filename, output_filename)
 				"Niche"]
 		# For each row from Campus Explorer CSV File
 		counter = 0
-		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|
-			#puts "headers: " + row.headers.to_s
+		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'UTF-8') do |row|
+			#THE PROBLEM: The headers in this file are being red as funny characters.  This is likely an encoding problem.
+			#Maybe it makes sense for me to take the file when it was previously written, and immediately write it again in a different encoding...?
+			puts row.headers.to_s
+
 			position_weight = ""
 			impression_share = ""
 			estimated_searches = ""
@@ -127,25 +129,10 @@ def process_adwords_data_file (input_filename, output_filename)
 end
 
 def adwords_tsv_to_csv (tsv_filename, csv_filename)
-	File.open(tsv_filename, "rb") do |file|
-		doc = file.read
-		doc = Iconv.iconv('utf-8', 'UTF-16LE', doc)
-		File.open("test.txt", 'w:utf-8') {|f| f.write(doc) }
-	end
-
 	CSV.open(csv_filename, "wb:utf-8") do |csv|
-		File.open("test.txt", "rb") do |file|
-			contents = file.read
-			puts "Contents: #{contents.class}"
-			contents.gsub!(/\n/, "NEW FUCKING LINE")
-			puts contents
-			lines = contents.split(/\n/)
-			puts "Lines: #{lines.class}"
-			puts "Num Lines: #{lines.length}"
-
+		File.open(tsv_filename, "r:utf-8") do |file|
 			counter = 0
-			lines.each do |tsv|
-				#puts tsv
+			file.each_line do |tsv|
 				#Remove first 5 rows of header data
 				if counter > 4
 					tsv.chomp!
