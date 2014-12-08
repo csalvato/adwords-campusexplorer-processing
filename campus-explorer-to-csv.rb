@@ -102,11 +102,7 @@ def process_adwords_data_file (input_filename, output_filename)
 				"Niche"]
 		# For each row from Campus Explorer CSV File
 		counter = 0
-		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'UTF-8') do |row|
-			#THE PROBLEM: The headers in this file are being red as funny characters.  This is likely an encoding problem.
-			#Maybe it makes sense for me to take the file when it was previously written, and immediately write it again in a different encoding...?
-			puts row.headers.to_s
-
+		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|
 			position_weight = ""
 			impression_share = ""
 			estimated_searches = ""
@@ -130,13 +126,16 @@ end
 
 def adwords_tsv_to_csv (tsv_filename, csv_filename)
 	CSV.open(csv_filename, "wb:utf-8") do |csv|
-		File.open(tsv_filename, "r:utf-8") do |file|
+		File.open(tsv_filename, "rb:utf-16le") do |file|
 			counter = 0
 			file.each_line do |tsv|
 				#Remove first 5 rows of header data
 				if counter > 4
+					tsv = tsv.encode('utf-8')
 					tsv.chomp!
 					tsv.gsub!("\"","")
+					puts tsv.to_s if counter == 5
+					puts tsv.split(/\t/) if counter == 5
 					csv << tsv.split(/\t/)
 				end
 				counter = counter + 1
