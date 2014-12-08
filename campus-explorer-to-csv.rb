@@ -37,7 +37,8 @@ def process_ce_csv (input_filename, output_filename)
 				"Ad Top/Side",
 				"Ad Position",
 				"Network",
-				"Widget Location"]
+				"Widget Location",
+				"Niche"]
 		# For each row from Campus Explorer CSV File
 		CSV.foreach(input_filename, :headers => true, :return_headers => false, :encoding => 'windows-1251:utf-8') do |row|
 			# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
@@ -67,7 +68,8 @@ def process_ce_csv (input_filename, output_filename)
 						source_data[:ad_top_side],
 						source_data[:ad_position],
 						source_data[:network],
-						source_data[:widget_location]
+						source_data[:widget_location],
+						source_data[:niche]
 						]
 			end
 		end
@@ -111,6 +113,17 @@ def process_source_code (sourcecode)
 		match_type = "Broad"
 	end
 
+	# Decode Network Type
+	network = sourcecode.string_between_markers "_n*", "_"
+	case network
+	when "g"
+		network = "Google"
+	when "s"
+		network = "Search"
+	when "d"
+		network = "Display"
+	end
+
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
 	device = sourcecode.string_between_markers "_d*", "_"
@@ -136,10 +149,16 @@ def process_source_code (sourcecode)
 	elsif sourcecode.include? "ContentCTA"
 		widget_location = "Content CTA Lightbox"
 	end
-			
+
+	# Decode Niche
+	lp = sourcecode.string_between_markers "-lp*", "_"
+	unless lp.nil?	
+		niche = "CNA" if lp.include? "cna"
+		niche = "LPN" if lp.include? "lpn"
+	end
 
 	{ 	
-		lp: (sourcecode.string_between_markers "-lp*", "_"),
+		lp: lp,
 		source: (sourcecode.string_between_markers "_src*", "_"),
 		campaign_id: (sourcecode.string_between_markers "_x*", "_"),
 		device: device,
@@ -150,8 +169,9 @@ def process_source_code (sourcecode)
 		ad_page: ad_page,
 		ad_top_side: ad_top_side,
 		ad_position: ad_position,
-		network: (sourcecode.string_between_markers "_n*", "_"),
-		widget_location: widget_location
+		network: network,
+		widget_location: widget_location,
+		niche: niche
 	}
 
 end
