@@ -98,13 +98,13 @@ def process_adwords_data_file (input_filename, output_filename)
 				"Position Weight",
 				"Estimated Impression Share",
 				"Estimated Searches",
+				"Network",
 				"Device",
+				"Campaign",
 				"Niche"]
 		# For each row from Campus Explorer CSV File
 		counter = 0
 		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|
-			position_weight = ""
-			impression_share = ""
 			estimated_searches = ""
 			device = ""
 			niche = ""
@@ -113,15 +113,35 @@ def process_adwords_data_file (input_filename, output_filename)
 					row["Clicks"],
 					row["Cost"],
 					row["Avg. Position"],
-					position_weight,
-					impression_share,
+					position_weight (impressions, avg_position),
+					impression_share(impression_share_value),
 					estimated_searches,
+					row["Network (with search partners)"],
 					device,
+					row["Campaign"],
 					niche]
 		end
 	end
+end
 
+def position_weight (impressions, avg_position)
+	""
+end
 
+def impression_share (impression_share_value)
+	""
+end
+
+def estimated_searches(impressions, calculated_impression_share)
+	""
+end
+
+def device(device)
+	""
+end	
+
+def niche(campaign_name)
+	""
 end
 
 def adwords_tsv_to_csv (tsv_filename, csv_filename)
