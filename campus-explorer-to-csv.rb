@@ -13,6 +13,13 @@ end
 
 # Processes a CE data **CSV** File into output
 def process_ce_csv (input_filename, output_filename)
+	#Check if the input file is xls.  If so, change to CSV
+	if input_filename.include? "xls"
+		csv_filename = input_filename.gsub "xls", "csv"
+		xls_to_csv(input_filename, csv_filename)
+		input_filename = csv_filename
+	end
+
 	CSV.open(output_filename, "wb") do |csv|
 		# Create Header Row
 		csv << ["Date",
@@ -76,6 +83,20 @@ def process_ce_csv (input_filename, output_filename)
 	end
 end
 
+def xls_to_csv (xls_filename, csv_filename)
+	CSV.open(csv_filename, "wb") do |csv|
+	  File.open(xls_filename) do |file|
+	    counter = 0
+	    file.each_line do |tsv|
+	      tsv.chomp!
+	      tsv.gsub!('"','')
+	      csv << tsv.split(/\t/)
+	      counter = counter + 1
+	    end
+	  end
+	end
+end
+
 def has_campusexplorer_data? (row, source_data)
 	# => YES -> if source parameter is set and is adwords
 	# row["Unreconciled Publisher Total Revenue"].to_f > 0 &&
@@ -101,7 +122,10 @@ def get_output_filename
 end	
 
 def process_source_code (sourcecode)
-	
+	if sourcecode.nil?
+		sourcecode = ""
+	end		
+
 	# Decode Match Type
 	match_type = sourcecode.string_between_markers "_m*", "_"
 	case match_type
@@ -173,7 +197,6 @@ def process_source_code (sourcecode)
 		widget_location: widget_location,
 		niche: niche
 	}
-
 end
 
 input_filename = get_input_filename
