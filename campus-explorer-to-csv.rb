@@ -16,7 +16,7 @@ def process_ce_data_file (input_filename, output_filename)
 	#Check if the input file is xls.  If so, change to CSV
 	if input_filename.include? "xls"
 		csv_filename = input_filename.gsub "xls", "csv"
-		tsv_to_csv(input_filename, csv_filename)
+		ce_tsv_to_csv(input_filename, csv_filename)
 		input_filename = csv_filename
 	end
 
@@ -85,20 +85,52 @@ end
 
 def process_adwords_data_file (input_filename, output_filename)
 	# Convert to CSV
+	adwords_tsv_to_csv input_filename, output_filename
+
+	# Read CSV line by line and create following columns:
+		# => Date
+		# => Impressions
+		# => Clicks
+		# => Cost
+		# => Position Weight
+		# => Estimated Impression Share
+		# => Estimated Searches
+		# => Device
+		# => Niche
+	# Convert date column to %Y-%m-%d %a (2014-11-05 Sun) format to be consistent with CE file
+	# Date.strptime("2014-11-08", "%Y-%m-%d").strftime("%Y-%m-%d %a")
+
 
 end
 
-def tsv_to_csv (tsv_filename, csv_filename)
+def adwords_tsv_to_csv (tsv_filename, csv_filename)
 	CSV.open(csv_filename, "wb") do |csv|
-	  File.open(tsv_filename) do |file|
-	    counter = 0
-	    file.each_line do |tsv|
-	      tsv.chomp!
-	      tsv.gsub!('"','')
-	      csv << tsv.split(/\t/)
-	      counter = counter + 1
-	    end
-	  end
+		File.open(tsv_filename) do |file|
+			counter = 0
+			file.each_line do |tsv|
+				#Remove first 5 rows of header data
+				if counter > 4
+					tsv.chomp!
+					tsv.gsub!('"','')
+					csv << tsv.split(/\t/)
+				end
+				counter = counter + 1
+			end
+		end
+	end
+end	
+
+def ce_tsv_to_csv (tsv_filename, csv_filename)
+	CSV.open(csv_filename, "wb") do |csv|
+		File.open(tsv_filename) do |file|
+			counter = 0
+			file.each_line do |tsv|
+				tsv.chomp!
+				tsv.gsub!('"','')
+				csv << tsv.split(/\t/)
+				counter = counter + 1
+			end
+		end
 	end
 end
 
@@ -207,6 +239,7 @@ end
 input_filename = get_input_filename
 output_filename = get_output_filename
 process_ce_data_file(input_filename, output_filename)
+process_adwords_data_file("Campaign performance report.csv", "adwords.csv")
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
