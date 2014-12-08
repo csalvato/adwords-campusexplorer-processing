@@ -4,6 +4,7 @@ start_time = Time.now
 puts "Starting Script..."
 
 require 'csv'
+require 'iconv'
 
 class String
   def string_between_markers marker1, marker2
@@ -85,33 +86,70 @@ end
 
 def process_adwords_data_file (input_filename, output_filename)
 	# Convert to CSV
-	adwords_tsv_to_csv input_filename, output_filename
+	adwords_csv_filename = "adwords-prepped.csv"
+	adwords_tsv_to_csv input_filename, adwords_csv_filename
 
-	# Read CSV line by line and create following columns:
-		# => Date
-		# => Impressions
-		# => Clicks
-		# => Cost
-		# => Position Weight
-		# => Estimated Impression Share
-		# => Estimated Searches
-		# => Device
-		# => Niche
-	# Convert date column to %Y-%m-%d %a (2014-11-05 Sun) format to be consistent with CE file
-	# Date.strptime("2014-11-08", "%Y-%m-%d").strftime("%Y-%m-%d %a")
+	CSV.open(output_filename, "wb") do |csv|
+		# Create Header Row
+		csv << ["Date",
+				"Impressions",
+				"Clicks",
+				"Cost",
+				"Average Position",
+				"Position Weight",
+				"Estimated Impression Share",
+				"Estimated Searches",
+				"Device",
+				"Niche"]
+		# For each row from Campus Explorer CSV File
+		counter = 0
+		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|
+			#puts "headers: " + row.headers.to_s
+			position_weight = ""
+			impression_share = ""
+			estimated_searches = ""
+			device = ""
+			niche = ""
+			csv << [row["Day"],
+					row["Impressions"],
+					row["Clicks"],
+					row["Cost"],
+					row["Avg. Position"],
+					position_weight,
+					impression_share,
+					estimated_searches,
+					device,
+					niche]
+		end
+	end
 
 
 end
 
 def adwords_tsv_to_csv (tsv_filename, csv_filename)
-	CSV.open(csv_filename, "wb") do |csv|
-		File.open(tsv_filename) do |file|
+	File.open(tsv_filename, "rb") do |file|
+		doc = file.read
+		doc = Iconv.iconv('utf-8', 'UTF-16LE', doc)
+		File.open("test.txt", 'w:utf-8') {|f| f.write(doc) }
+	end
+
+	CSV.open(csv_filename, "wb:utf-8") do |csv|
+		File.open("test.txt", "rb") do |file|
+			contents = file.read
+			puts "Contents: #{contents.class}"
+			contents.gsub!(/\n/, "NEW FUCKING LINE")
+			puts contents
+			lines = contents.split(/\n/)
+			puts "Lines: #{lines.class}"
+			puts "Num Lines: #{lines.length}"
+
 			counter = 0
-			file.each_line do |tsv|
+			lines.each do |tsv|
+				#puts tsv
 				#Remove first 5 rows of header data
 				if counter > 4
 					tsv.chomp!
-					tsv.gsub!('"','')
+					tsv.gsub!("\"","")
 					csv << tsv.split(/\t/)
 				end
 				counter = counter + 1
