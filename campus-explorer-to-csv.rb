@@ -83,9 +83,14 @@ def process_ce_data_file (input_filename, output_filename)
 	end
 end
 
-def tsv_to_csv (xls_filename, csv_filename)
+def process_adwords_data_file (input_filename, output_filename)
+	# Convert to CSV
+
+end
+
+def tsv_to_csv (tsv_filename, csv_filename)
 	CSV.open(csv_filename, "wb") do |csv|
-	  File.open(xls_filename) do |file|
+	  File.open(tsv_filename) do |file|
 	    counter = 0
 	    file.each_line do |tsv|
 	      tsv.chomp!
