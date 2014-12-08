@@ -11,12 +11,12 @@ class String
   end
 end
 
-# Processes a CE data **CSV** File into output
-def process_ce_csv (input_filename, output_filename)
+# Processes a CE data CSV or TSV-XLS File into output
+def process_ce_data_file (input_filename, output_filename)
 	#Check if the input file is xls.  If so, change to CSV
 	if input_filename.include? "xls"
 		csv_filename = input_filename.gsub "xls", "csv"
-		xls_to_csv(input_filename, csv_filename)
+		tsv_to_csv(input_filename, csv_filename)
 		input_filename = csv_filename
 	end
 
@@ -83,7 +83,7 @@ def process_ce_csv (input_filename, output_filename)
 	end
 end
 
-def xls_to_csv (xls_filename, csv_filename)
+def tsv_to_csv (xls_filename, csv_filename)
 	CSV.open(csv_filename, "wb") do |csv|
 	  File.open(xls_filename) do |file|
 	    counter = 0
@@ -201,7 +201,7 @@ end
 
 input_filename = get_input_filename
 output_filename = get_output_filename
-process_ce_csv(input_filename, output_filename)
+process_ce_data_file(input_filename, output_filename)
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
