@@ -84,7 +84,7 @@ def process_ce_data_file (input_filename, output_filename)
 	end
 end
 
-def process_adwords_data_file (input_filename, output_filename)
+def process_ad_adwords_data_file (input_filename, output_filename)
 	# Convert to CSV
 	adwords_csv_filename = "adwords-prepped.csv"
 	adwords_tsv_to_csv input_filename, adwords_csv_filename
@@ -96,49 +96,48 @@ def process_adwords_data_file (input_filename, output_filename)
 				"Cost",
 				"Average Position",
 				"Position Weight",
-				"Estimated Impression Share",
-				"Estimated Searches",
 				"Network",
 				"Device",
 				"Campaign",
+				"Ad Group",
+				"Ad ID",
 				"Niche"]
 		# For each row from Campus Explorer CSV File
 		counter = 0
-		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|
+		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
 			csv << [row["Day"],
 					row["Impressions"],
 					row["Clicks"],
 					row["Cost"],
-					row["Avg. Position"],
-					position_weight(row["Impressions"], row["Avg. Position"]),
-					impression_share(row["Search Impr. share"]),
-					estimated_searches(row["Impressions"], impression_share(row["Search Impr. share"])),
+					row["Avg. position"],
+					position_weight(row["Impressions"], row["Avg. position"]),
 					row["Network (with search partners)"],
 					device( row["Device"] ),
 					row["Campaign"],
+					row["Ad group"],
+					row["Ad ID"],
 					niche(row["Campaign"])]
 		end
 	end
 end
 
 def position_weight (impressions, avg_position)
-	""
-end
-
-def impression_share (impression_share_value)
-	""
-end
-
-def estimated_searches(impressions, calculated_impression_share)
-	""
+	impressions.to_f * avg_position.to_f
 end
 
 def device(device_string)
-	""
+	case device_string
+	when "Mobile devices with full browsers"
+		"mb"
+	when "Computers"
+		"dt"
+	when "Tablets with full browsers"
+		"dt"
+	end
+
 end	
 
 def niche(campaign_name)
-	puts campaign_name
 	ret_val = "CNA"
 	ret_val = "LPN" if campaign_name.include? "LPN"
 	ret_val
@@ -283,7 +282,7 @@ end
 input_filename = get_input_filename
 output_filename = get_output_filename
 process_ce_data_file(input_filename, output_filename)
-process_adwords_data_file("Campaign performance report.csv", "adwords.csv")
+process_ad_adwords_data_file("Ad performance report.csv", "adwords.csv")
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
