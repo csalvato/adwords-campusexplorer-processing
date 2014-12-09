@@ -235,24 +235,6 @@ def has_campusexplorer_data? (row, source_data)
 	source_data[:source] == "adwords"
 end
 
-def get_input_filename
-	filename = ARGV[0]
-	if filename.nil?
-		puts "Enter CampusExplorer File Name:"
-		filename = gets.chomp
-	end
-	return filename
-end
-
-def get_output_filename
-	filename = ARGV[1]
-	if filename.nil?
-		puts "Enter Output File Name:"
-		filename = gets.chomp
-	end
-	return filename
-end	
-
 def process_source_code (sourcecode)
 	if sourcecode.nil?
 		sourcecode = ""
@@ -333,7 +315,7 @@ end
 
 input_filename = get_input_filename
 output_filename = get_output_filename
-process_ce_data_file(input_filename, output_filename)
+process_ce_data_file("Campaign performance report.xls", "Campus Explorer Revenue.csv")
 process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
 process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
 
