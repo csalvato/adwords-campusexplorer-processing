@@ -102,7 +102,6 @@ def process_ad_adwords_data_file (input_filename, output_filename)
 				"Ad Group",
 				"Ad ID",
 				"Niche"]
-		# For each row from Campus Explorer CSV File
 		counter = 0
 		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
 			csv << [row["Day"],
@@ -119,6 +118,59 @@ def process_ad_adwords_data_file (input_filename, output_filename)
 					niche(row["Campaign"])]
 		end
 	end
+end
+
+def process_campaign_adwords_data_file (input_filename, output_filename)
+	# Convert to CSV
+	adwords_csv_filename = "adwords-prepped.csv"
+	adwords_tsv_to_csv input_filename, adwords_csv_filename
+	CSV.open(output_filename, "wb") do |csv|
+		# Create Header Row
+		csv << ["Date",
+				"Impressions",
+				"Clicks",
+				"Cost",
+				"Average Position",
+				"Position Weight",
+				"Est. Impression Share",
+				"Est. Searches",
+				"Network",
+				"Device",
+				"Campaign",
+				"Campaign ID",
+				"Niche"]
+		counter = 0
+		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [row["Day"],
+					row["Impressions"],
+					row["Clicks"],
+					row["Cost"],
+					row["Avg. position"],
+					position_weight(row["Impressions"], row["Avg. position"]),
+					estimated_impression_share(row["Search Impr. share"]),
+					estimated_searches(row["Impressions"], estimated_impression_share(row["Search Impr. share"])),
+					row["Network (with search partners)"],
+					device( row["Device"] ),
+					row["Campaign"],
+					row["Campaign ID"],
+					niche(row["Campaign"])]
+		end
+	end
+end
+
+def estimated_impression_share (impression_share_string)
+	case impression_share_string
+	when "< 10%"
+		0.05
+	when " --"
+		1
+	else
+		impression_share_string.to_f / 100
+	end
+end
+
+def estimated_searches(impressions, est_impression_share)
+	impressions.to_f / est_impression_share.to_f
 end
 
 def position_weight (impressions, avg_position)
@@ -282,7 +334,8 @@ end
 input_filename = get_input_filename
 output_filename = get_output_filename
 process_ce_data_file(input_filename, output_filename)
-process_ad_adwords_data_file("Ad performance report.csv", "adwords.csv")
+process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
+process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
