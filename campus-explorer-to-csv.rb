@@ -313,8 +313,6 @@ def process_source_code (sourcecode)
 	}
 end
 
-input_filename = get_input_filename
-output_filename = get_output_filename
 process_ce_data_file("Campaign performance report.xls", "Campus Explorer Revenue.csv")
 process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
 process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
