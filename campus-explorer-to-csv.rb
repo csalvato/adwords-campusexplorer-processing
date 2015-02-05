@@ -47,7 +47,8 @@ def process_ce_data_file (input_filename, output_filename)
 				"Ad Position",
 				"Network",
 				"Widget Location",
-				"Niche"]
+				"Niche",
+				"Original Source"]
 		# For each row from Campus Explorer CSV File
 		CSV.foreach(input_filename, :headers => true, :return_headers => false, :encoding => 'windows-1251:utf-8') do |row|
 			# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
@@ -78,7 +79,8 @@ def process_ce_data_file (input_filename, output_filename)
 						source_data[:ad_position],
 						source_data[:network],
 						source_data[:widget_location],
-						source_data[:niche]
+						source_data[:niche],
+						row["Source Code"]
 						]
 			end
 		end
@@ -145,7 +147,8 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 						"Niche",
 						"SEED",
 						"Lead Users",
-						"Network"
+						"Network",
+						"Original Source"
 						]
 
 		
@@ -174,15 +177,19 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							row["Niche"],
 							row["SEED"],
 							row["Lead Users"],
-							row["Network"]
+							row["Network"],
+							row["Original Source"]
 						 ]
 		end
 		
 		revenue_data.each do |row|
+			ad_id_row = ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
+			campaign =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Campaign"]
+
 			csv << [row["Date"],
 							Date.parse(row["Date"]).strftime('%A'),
 							row["Ad ID"],
-							row["Campaign"],
+							campaign,
 							row["Ad Group"],
 							row["Impressions"],
 							row["Clicks"],
@@ -200,7 +207,8 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							row["Niche"],
 							row["SEED"],
 							row["Lead Users"],
-							row["Network"]
+							row["Network"],
+							row["Original Source"]
 						 ]
 		end
 	end		
@@ -350,7 +358,7 @@ def process_source_code (sourcecode)
 		device2: (sourcecode.string_between_markers "_d2*", "_"),
 		keyword: (sourcecode.string_between_markers "_k*", "_"),
 		match: match_type,
-		ad_id: (sourcecode.string_between_markers "_c*", "_"),
+		ad_id: sourcecode.string_between_markers("_c*", "_"),
 		ad_page: ad_page,
 		ad_top_side: ad_top_side,
 		ad_position: ad_position,
