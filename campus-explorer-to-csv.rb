@@ -66,10 +66,10 @@ def process_ce_data_file (input_filename, output_filename)
 						row["Unreconciled Publisher Total Revenue"],
 						source_data[:lp],
 						source_data[:source],
-						source_data[:campaign_id],
+						source_data[:campaign_id].gsub("]",""),
 						source_data[:device],
 						source_data[:device2],
-						source_data[:keyword],
+						"'" + source_data[:keyword] + "'",
 						source_data[:match],
 						source_data[:creative],
 						source_data[:ad_page],
@@ -104,7 +104,7 @@ def process_ad_adwords_data_file (input_filename, output_filename)
 				"Niche"]
 		counter = 0
 		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
-			csv << [row["Day"],
+			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
 					row["Impressions"],
 					row["Clicks"],
 					row["Cost"],
@@ -141,7 +141,7 @@ def process_campaign_adwords_data_file (input_filename, output_filename)
 				"Niche"]
 		counter = 0
 		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
-			csv << [row["Day"],
+			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
 					row["Impressions"],
 					row["Clicks"],
 					row["Cost"],
@@ -156,6 +156,162 @@ def process_campaign_adwords_data_file (input_filename, output_filename)
 					niche(row["Campaign"])]
 		end
 	end
+end
+
+def combine_all_files(revenue_data_filename, ad_data_filename, campaign_data_filename, output_filename)
+	CSV.open(output_filename, "wb") do |csv|
+		# Create Header Row
+		csv << ["Date",
+				"Impressions",
+				"Clicks",
+				"Cost",
+				"Average Position",
+				"Position Weight",
+				"Est. Impression Share",
+				"Est. Searches",
+				"Network",
+				"Device",
+				"Campaign",
+				"Campaign ID",
+				"Niche",
+				"Ad Group",
+				"Ad ID",
+				"Widget Impressions",
+				"Lead Request Users",
+				"Lead Users",
+				"Leads",
+				"Clickout Impressions",
+				"Clickouts",
+				"Lead Revenue",
+				"Clickout Revenue",
+				"Total Revenue",
+				"Landing Page",
+				"Source",
+				"Campaign ID",
+				"Device",
+				"Device2",
+				"Keyword",
+				"Match",
+				"Ad ID", # row["Creative"]
+				"Ad Page",
+				"Ad Top/Side",
+				"Ad Position",
+				"Widget Location"]
+		CSV.foreach(revenue_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [row["Date"],
+							row["Impressions"],
+							row["Clicks"],
+							row["Cost"],
+							row["Average Position"],
+							row["Position Weight"],
+							row["Est. Impression Share"],
+							row["Est. Searches"],
+							row["Network"],
+							row["Device"],
+							row["Campaign"],
+							row["Campaign ID"],
+							row["Niche"],
+							row["Ad Group"],
+							row["Ad ID"],
+							row["Widget Impressions"],
+							row["Lead Request Users"],
+							row["Lead Users"],
+							row["Leads"],
+							row["Clickout Impressions"],
+							row["Clickouts"],
+							row["Lead Revenue"],
+							row["Clickout Revenue"],
+							row["Total Revenue"],
+							row["Landing Page"],
+							row["Source"],
+							row["Campaign ID"],
+							row["Device"],
+							row["Device2"],
+							row["Keyword"],
+							row["Match"],
+							row["Creative"],
+							row["Ad Page"],
+							row["Ad Top/Side"],
+							row["Ad Position"],
+							row["Widget Location"]]
+		end
+		CSV.foreach(ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [row["Date"],
+							row["Impressions"],
+							row["Clicks"],
+							row["Cost"],
+							row["Average Position"],
+							row["Position Weight"],
+							row["Est. Impression Share"],
+							row["Est. Searches"],
+							row["Network"],
+							row["Device"],
+							row["Campaign"],
+							row["Campaign ID"],
+							row["Niche"],
+							row["Ad Group"],
+							row["Ad ID"],
+							row["Widget Impressions"],
+							row["Lead Request Users"],
+							row["Lead Users"],
+							row["Leads"],
+							row["Clickout Impressions"],
+							row["Clickouts"],
+							row["Lead Revenue"],
+							row["Clickout Revenue"],
+							row["Total Revenue"],
+							row["Landing Page"],
+							row["Source"],
+							row["Campaign ID"],
+							row["Device"],
+							row["Device2"],
+							row["Keyword"],
+							row["Match"],
+							row["Creative"],
+							row["Ad Page"],
+							row["Ad Top/Side"],
+							row["Ad Position"],
+							row["Widget Location"]]
+		end
+		CSV.foreach(campaign_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [row["Date"],
+							row["Impressions"],
+							row["Clicks"],
+							row["Cost"],
+							row["Average Position"],
+							row["Position Weight"],
+							row["Est. Impression Share"],
+							row["Est. Searches"],
+							row["Network"],
+							row["Device"],
+							row["Campaign"],
+							row["Campaign ID"],
+							row["Niche"],
+							row["Ad Group"],
+							row["Ad ID"],
+							row["Widget Impressions"],
+							row["Lead Request Users"],
+							row["Lead Users"],
+							row["Leads"],
+							row["Clickout Impressions"],
+							row["Clickouts"],
+							row["Lead Revenue"],
+							row["Clickout Revenue"],
+							row["Total Revenue"],
+							row["Landing Page"],
+							row["Source"],
+							row["Campaign ID"],
+							row["Device"],
+							row["Device2"],
+							row["Keyword"],
+							row["Match"],
+							row["Creative"],
+							row["Ad Page"],
+							row["Ad Top/Side"],
+							row["Ad Position"],
+							row["Widget Location"]]
+		end
+	end		
 end
 
 def estimated_impression_share (impression_share_string)
@@ -205,9 +361,8 @@ def adwords_tsv_to_csv (tsv_filename, csv_filename)
 					tsv = tsv.encode('utf-8')
 					tsv.chomp!
 					tsv.gsub!("\"","")
-					puts tsv.to_s if counter == 5
-					puts tsv.split(/\t/) if counter == 5
-					csv << tsv.split(/\t/)
+					row_data = tsv.split(/\t/)
+					csv << row_data unless row_data[0] == "Total"
 				end
 				counter = counter + 1
 			end
@@ -313,9 +468,10 @@ def process_source_code (sourcecode)
 	}
 end
 
-process_ce_data_file("Campaign performance report.xls", "Campus Explorer Revenue.csv")
+process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
 process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
+combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv","adwords-campaigns.csv", "final_output.csv")
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
