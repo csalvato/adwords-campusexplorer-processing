@@ -185,12 +185,13 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 		revenue_data.each do |row|
 			ad_id_row = ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
 			campaign =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Campaign"]
+			ad_group =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Ad Group"]
 
 			csv << [row["Date"],
 							Date.parse(row["Date"]).strftime('%A'),
 							row["Ad ID"],
 							campaign,
-							row["Ad Group"],
+							ad_group,
 							row["Impressions"],
 							row["Clicks"],
 							row["Cost"],
