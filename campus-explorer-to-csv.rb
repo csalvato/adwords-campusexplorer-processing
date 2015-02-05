@@ -453,7 +453,7 @@ def process_source_code (sourcecode)
 	{ 	
 		lp: lp,
 		source: (sourcecode.string_between_markers "_src*", "_"),
-		campaign_id: (sourcecode.string_between_markers "_x*", "_"),
+		campaign_id: (sourcecode.string_between_markers "_x*", "_") || "",
 		device: device,
 		device2: (sourcecode.string_between_markers "_d2*", "_"),
 		keyword: (sourcecode.string_between_markers "_k*", "_"),
