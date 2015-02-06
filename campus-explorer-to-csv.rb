@@ -3,6 +3,7 @@
 start_time = Time.now
 puts "Starting Script..."
 
+require 'time'
 require 'csv'
 require 'iconv'
 require 'date'
@@ -156,7 +157,28 @@ def process_ad_bing_data_file (input_filename, output_filename)
 end
 
 def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_data_filename, output_filename)
-	CSV.open(output_filename, "wb") do |csv|
+	# Open CSVs in Memory
+	database_data = CSV.read(output_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+	adwords_ad_data = CSV.read(adwords_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+	revenue_data = CSV.read(revenue_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+	bing_ad_data = CSV.read(bing_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+
+	# Select those rows whose date is earlier than "2014-11-11 Tue"
+	database_data = database_data.select do |row| 
+		puts row["Date"]
+		row["Date"] ? Date.parse(row["Date"]) <= Date.parse('2014-11-11 Tue') : false
+	end
+
+	CSV.open("!!!" + output_filename, "wb") do |csv|
+		database_data.each do |row|
+			csv << row
+		end
+	end
+
+	'say "Script Finished!"'
+	exit #For development purposes only
+
+	CSV.open(output_filename, "a") do |csv|
 		# Create Header Row
 		csv << ["Date",
 						"Day Of Week",
@@ -182,11 +204,6 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						"Network",
 						"Original Source"
 						]
-
-		
-		adwords_ad_data = CSV.read(adwords_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
-		revenue_data = CSV.read(revenue_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
-		bing_ad_data = CSV.read(bing_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 
 		adwords_ad_data.each do |row|
 			csv << [row["Date"],
@@ -445,7 +462,8 @@ end
 process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
 process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
-combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "final_output.csv")
+combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database test.csv")
 
 puts "Script Complete!"
+'say "Script Finished!"'
 puts "Time elapsed: #{Time.now - start_time} seconds"
