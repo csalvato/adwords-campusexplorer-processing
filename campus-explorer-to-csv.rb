@@ -102,8 +102,7 @@ def process_ad_adwords_data_file (input_filename, output_filename)
 				"Device",
 				"Campaign",
 				"Ad Group",
-				"Ad ID",
-				"Niche"]
+				"Ad ID"]
 		counter = 0
 		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
 			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
@@ -116,8 +115,7 @@ def process_ad_adwords_data_file (input_filename, output_filename)
 					device( row["Device"] ),
 					row["Campaign"],
 					row["Ad group"],
-					row["Ad ID"],
-					niche(row["Campaign"])]
+					row["Ad ID"]]
 		end
 	end
 end
@@ -138,8 +136,7 @@ def process_ad_bing_data_file (input_filename, output_filename)
 				"Device",
 				"Campaign",
 				"Ad Group",
-				"Ad ID",
-				"Niche"]
+				"Ad ID"]
 		counter = 0
 		CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
 			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
@@ -152,8 +149,7 @@ def process_ad_bing_data_file (input_filename, output_filename)
 					device( row["Device"] ),
 					row["Campaign"],
 					row["Ad group"],
-					row["Ad ID"],
-					niche(row["Campaign"])]
+					row["Ad ID"]]
 		end
 	end
 end
