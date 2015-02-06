@@ -261,7 +261,15 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		campaign = "{Not Found}"
 		ad_group = "{Not Found}"
 
-		if ad_id_row = database_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"] }
+		ad_id_row = database_data.find do |ad_row|
+			if ad_row['Ad ID'] == "5737839981"
+				puts ad_row['Ad ID']
+				puts row["Ad ID"]
+			end
+			ad_row['Ad ID'] == row["Ad ID"]
+		end
+
+		if ad_id_row 
 			campaign =  ad_id_row["Campaign"]
 			ad_group =  ad_id_row["Ad Group"]
 		end
