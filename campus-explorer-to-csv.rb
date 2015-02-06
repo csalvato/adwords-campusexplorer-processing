@@ -158,15 +158,47 @@ end
 
 def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_data_filename, output_filename)
 	# Open CSVs in Memory
-	database_data = CSV.read(output_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+	database_data = CSV.read(output_filename, :headers => true, :return_headers => true, :encoding => 'utf-8')
 	adwords_ad_data = CSV.read(adwords_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 	revenue_data = CSV.read(revenue_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 	bing_ad_data = CSV.read(bing_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 
-	# Select those rows whose date is earlier than "2014-11-11 Tue"
+	# Get earliest date from each file type (should be the same in each file)
+	earliest_adwords_date = adwords_ad_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	earliest_revenue_date = revenue_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	earliest_bing_date = bing_ad_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+
+	if earliest_adwords_date != earliest_bing_date &&  
+		 earliest_bing_date != earliest_revenue_date
+		raise Exception, "All files do not start on the same date"
+	end
+	
+	earliest_date = earliest_adwords_date
+	
+
+	# Get latest date from each file type (should be the same in each file)
+	latest_adwords_date = adwords_ad_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	latest_revenue_date = revenue_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	latest_bing_date = bing_ad_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+
+	if latest_adwords_date != latest_bing_date && 
+		 latest_bing_date != latest_revenue_date
+		raise Exception, "All files do not end on the same date"
+	end
+	
+	latest_date = latest_adwords_date
+
+	puts "Earliest date: #{earliest_date}"
+	puts "Latest date: #{latest_date}"
+
+	# Select (i.e keep) those rows whose date is earlier than the earliest date in the new file
 	database_data = database_data.select do |row| 
-		puts row["Date"]
-		row["Date"] ? Date.parse(row["Date"]) <= Date.parse('2014-11-11 Tue') : false
+		if row.header_row? 
+			true
+		else
+			puts row["Date"]
+			row["Date"] ? Date.parse(row["Date"]) < Date.parse(earliest_date) : false
+		end
 	end
 
 	CSV.open("!!!" + output_filename, "wb") do |csv|
@@ -175,35 +207,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		end
 	end
 
-	'say "Script Finished!"'
-	exit #For development purposes only
-
-	CSV.open(output_filename, "a") do |csv|
-		# Create Header Row
-		csv << ["Date",
-						"Day Of Week",
-						"Ad ID",
-						"Campaign",
-						"Adgroup",
-						"Impressions",
-						"Clicks",
-						"Cost",
-						"Lead Request Users",
-						"Leads",
-						"Clickouts",
-						"Lead Revenue",
-						"Clickout Revenue",
-						"Total Revenue",
-						"Position Weight",
-						"YYYY-MM-DD DDD",
-						"W/C Date",
-						"Device",
-						"Niche",
-						"SEED",
-						"Lead Users",
-						"Network",
-						"Original Source"
-						]
+	CSV.open("!!!" + output_filename, "a") do |csv|
 
 		adwords_ad_data.each do |row|
 			csv << [row["Date"],
