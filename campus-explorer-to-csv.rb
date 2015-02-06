@@ -50,9 +50,12 @@ def process_ce_data_file (input_filename, output_filename)
 				"Widget Location",
 				"Original Source"]
 		# For each row from Campus Explorer CSV File
+		counter = 0
 		CSV.foreach(input_filename, :headers => true, :return_headers => false, :encoding => 'windows-1251:utf-8') do |row|
 			# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
 			source_data = process_source_code row["Source Code"]
+			counter += 1
+			puts "trying row #{counter} which has KW #{source_data[:keyword]}"
 			# Is there data?
 			if has_campusexplorer_data? row, source_data
 				# Write ALL values out to processed CSV file
@@ -155,7 +158,7 @@ def process_ad_bing_data_file (input_filename, output_filename)
 	end
 end
 
-def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
+def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_data_filename, output_filename)
 	CSV.open(output_filename, "wb") do |csv|
 		# Create Header Row
 		csv << ["Date",
@@ -184,10 +187,11 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 						]
 
 		
-		ad_data = CSV.read(ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+		adwords_ad_data = CSV.read(adwords_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 		revenue_data = CSV.read(revenue_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+		bing_ad_data = CSV.read(bing_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 
-		ad_data.each do |row|
+		adwords_ad_data.each do |row|
 			csv << [row["Date"],
 							Date.parse(row["Date"]).strftime('%A'),
 							row["Ad ID"],
@@ -213,9 +217,36 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							row["Original Source"]
 						 ]
 		end
+
+		bing_ad_data.each do |row|
+			csv << [row["Date"],
+							Date.parse(row["Date"]).strftime('%A'),
+							row["Ad ID"],
+							row["Campaign"],
+							row["Ad Group"],
+							row["Impressions"],
+							row["Clicks"],
+							row["Cost"],
+							row["Lead Request Users"],
+							row["Leads"],
+							row["Clickouts"],
+							row["Lead Revenue"],
+							row["Clickout Revenue"],
+							row["Total Revenue"],
+							row["Position Weight"],
+							Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
+							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+							row["Device"],
+							row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
+							row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
+							row["Lead Users"],
+							"BingAds", # Network
+							row["Original Source"]
+						 ]
+		end
 		
 		revenue_data.each do |row|
-			ad_id_row = ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
+			ad_id_row = adwords_ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
 			campaign =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Campaign"]
 			ad_group =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Ad Group"]
 			niche = campaign.string_between_markers "[", "]"
@@ -331,9 +362,18 @@ def ce_tsv_to_csv (tsv_filename, csv_filename)
 end
 
 def has_campusexplorer_data? (row, source_data)
-	# => YES -> if source parameter is set and is adwords
-	# row["Unreconciled Publisher Total Revenue"].to_f > 0 &&
-	source_data[:source] == "adwords"
+	# => YES -> if the row:
+	# has Lead Request Users
+	# has Lead Users 
+	# has Revenue 
+	# AND 
+	# has the ValueTrack fields 
+	# AND
+	# doesn't have a curly brace (which means it was a test click) 
+	(row['Lead Users'].nil? != "0" ||
+	row['Lead Request Users'] != "0" ||
+	row['Unreconciled Publisher Total Revenue'] != "0.00") &&
+	(source_data[:keyword] != nil && !source_data[:keyword].include?("{") )
 end
 
 def process_source_code (sourcecode)
@@ -381,8 +421,7 @@ def process_source_code (sourcecode)
 		widget_location = "Content CTA Lightbox"
 	end
 
-	{ 	
-		lp: lp,
+	{
 		source: (sourcecode.string_between_markers "_src*", "_"),
 		campaign_id: (sourcecode.string_between_markers "_x*", "_") || "",
 		device: device,
@@ -398,10 +437,10 @@ def process_source_code (sourcecode)
 	}
 end
 
-#process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
-#process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
+process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
+process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
 process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
-#combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "final_output.csv")
+combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "final_output.csv")
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
