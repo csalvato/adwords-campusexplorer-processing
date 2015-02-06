@@ -6,6 +6,7 @@ puts "Starting Script..."
 require 'csv'
 require 'iconv'
 require 'date'
+require 'roo'
 
 class String
   def string_between_markers marker1, marker2
@@ -126,45 +127,38 @@ end
 def process_ad_bing_data_file (input_filename, output_filename)
 	# Convert to CSV
 	bing_csv_filename = "bing-prepped.csv"
+	puts "Creating #{bing_csv_filename}"
 	bing_tsv_to_csv input_filename, bing_csv_filename
-	# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-	#Left off here - check if the same algo for CSV will work for bing
-	#Left off here - check if the same algo for CSV will work for bing
-	#Left off here - check if the same algo for CSV will work for bing
-	#Left off here - check if the same algo for CSV will work for bing
-	#Left off here - check if the same algo for CSV will work for bing
-	#Left off here - check if the same algo for CSV will work for bing
-
-	CSV.open(output_filename, "wb") do |csv|
-		# Create Header Row
-		csv << ["Date",
-				"Impressions",
-				"Clicks",
-				"Cost",
-				"Average Position",
-				"Position Weight",
-				"Network",
-				"Device",
-				"Campaign",
-				"Ad Group",
-				"Ad ID",
-				"Niche"]
-		counter = 0
-		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
-			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
-					row["Impressions"],
-					row["Clicks"],
-					row["Cost"],
-					row["Avg. position"],
-					position_weight(row["Impressions"], row["Avg. position"]),
-					row["Network (with search partners)"],
-					device( row["Device"] ),
-					row["Campaign"],
-					row["Ad group"],
-					row["Ad ID"],
-					niche(row["Campaign"])]
-		end
-	end
+	# CSV.open(output_filename, "wb") do |csv|
+	# 	# Create Header Row
+	# 	csv << ["Date",
+	# 			"Impressions",
+	# 			"Clicks",
+	# 			"Cost",
+	# 			"Average Position",
+	# 			"Position Weight",
+	# 			"Network",
+	# 			"Device",
+	# 			"Campaign",
+	# 			"Ad Group",
+	# 			"Ad ID",
+	# 			"Niche"]
+	# 	counter = 0
+	# 	CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+	# 		csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
+	# 				row["Impressions"],
+	# 				row["Clicks"],
+	# 				row["Cost"],
+	# 				row["Avg. position"],
+	# 				position_weight(row["Impressions"], row["Avg. position"]),
+	# 				row["Network (with search partners)"],
+	# 				device( row["Device"] ),
+	# 				row["Campaign"],
+	# 				row["Ad group"],
+	# 				row["Ad ID"],
+	# 				niche(row["Campaign"])]
+	# 	end
+	# end
 end
 
 def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
@@ -317,22 +311,11 @@ def adwords_tsv_to_csv (tsv_filename, csv_filename)
 	end
 end	
 
-def bing_tsv_to_csv (tsv_filename, csv_filename)
-	CSV.open(csv_filename, "wb:utf-8") do |csv|
-		File.open(tsv_filename, "rb:utf-16le") do |file|
-			counter = 0
-			file.each_line do |tsv|
-				#Remove first 5 rows of header data
-				if counter > 7
-					tsv = tsv.encode('utf-8')
-					tsv.chomp!
-					tsv.gsub!("\"","")
-					row_data = tsv.split(/\t/)
-					csv << row_data unless row_data[0] == "Total"
-				end
-				counter = counter + 1
-			end
-		end
+def bing_tsv_to_csv (xlsx_filename, csv_filename)
+	csv_file = File.open(csv_filename, "w")
+	xlsx_file = Roo::Excelx.new(xlsx_filename)
+	10.upto(xlsx_file.last_row) do |line|
+  	csv_file.write CSV.generate_line xlsx_file.row(line)
 	end
 end	
 
@@ -426,9 +409,10 @@ def process_source_code (sourcecode)
 	}
 end
 
-process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
-process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
-combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "final_output.csv")
+#process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
+#process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
+process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
+#combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "final_output.csv")
 
 puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
