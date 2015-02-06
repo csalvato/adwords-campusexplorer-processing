@@ -201,16 +201,9 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		end
 	end
 
-	CSV.open("!!!" + output_filename, "wb") do |csv|
-		database_data.each do |row|
-			csv << row
-		end
-	end
-
-	CSV.open("!!!" + output_filename, "a") do |csv|
-
-		adwords_ad_data.each do |row|
-			csv << [row["Date"],
+	#Add AdWords data to the database data.
+	adwords_ad_data.each do |row|
+			database_data << [row["Date"],
 							Date.parse(row["Date"]).strftime('%A'),
 							row["Ad ID"],
 							row["Campaign"],
@@ -235,6 +228,18 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 							row["Original Source"]
 						 ]
 		end
+
+	CSV.open("!!!" + output_filename, "wb") do |csv|
+		database_data.each do |row|
+			csv << row
+		end
+	end
+
+	`say "Script Done!"`
+	exit # For testing only
+
+
+	CSV.open("!!!" + output_filename, "a") do |csv|
 
 		bing_ad_data.each do |row|
 			csv << [row["Date"],
