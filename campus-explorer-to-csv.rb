@@ -140,9 +140,7 @@ def process_ad_bing_data_file (input_filename, output_filename)
 				"Campaign",
 				"Ad Group",
 				"Ad ID"]
-		counter = 0
 		CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
-			counter += 1
 			csv << [Date.strptime(row["Gregorian date"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
 					row["Impressions"],
 					row["Clicks"],
@@ -153,7 +151,7 @@ def process_ad_bing_data_file (input_filename, output_filename)
 					device( row["Device type"] ),
 					row["Campaign name"],
 					row["Ad group"],
-					row["Ad ID"]]
+					row["Ad ID"].to_i.to_s]
 		end
 	end
 end
@@ -246,9 +244,16 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		end
 		
 		revenue_data.each do |row|
-			ad_id_row = adwords_ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
-			campaign =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Campaign"]
-			ad_group =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Ad Group"]
+			campaign = "{Not Found}"
+			ad_group = "{Not Found}"
+			if ad_id_row = adwords_ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
+				campaign =  ad_id_row["Campaign"]
+				ad_group =  ad_id_row["Ad Group"]
+			elsif ad_id_row = bing_ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
+				campaign =  ad_id_row["Campaign"]
+				ad_group =  ad_id_row["Ad Group"]
+			end
+
 			niche = campaign.string_between_markers "[", "]"
 			seed = campaign == "{Not Found}" ? "{Not Found}" : campaign.string_between_markers("{", " +")
 
@@ -370,7 +375,7 @@ def has_campusexplorer_data? (row, source_data)
 	# has the ValueTrack fields 
 	# AND
 	# doesn't have a curly brace (which means it was a test click) 
-	(row['Lead Users'].nil? != "0" ||
+	(row['Lead Users'] != "0" ||
 	row['Lead Request Users'] != "0" ||
 	row['Unreconciled Publisher Total Revenue'] != "0.00") &&
 	(source_data[:keyword] != nil && !source_data[:keyword].include?("{") )
@@ -382,7 +387,7 @@ def process_source_code (sourcecode)
 	end		
 
 	# Decode Match Type
-	match_type = sourcecode.string_between_markers "_m*", "_"
+	match_type = sourcecode.string_between_markers("_m*", "_").inspect
 	case match_type
 	when "e"
 		match_type = "Exact"
@@ -393,7 +398,8 @@ def process_source_code (sourcecode)
 	end
 
 	# Decode Network Type
-	network = sourcecode.string_between_markers "_src*", "_" || "adwords"
+	network = sourcecode.string_between_markers "_src*", "_"
+	network = "adwords" if network.nil?
 
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
