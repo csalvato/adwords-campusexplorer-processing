@@ -188,126 +188,113 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 	
 	latest_date = latest_adwords_date
 
-	puts "Earliest date: #{earliest_date}"
-	puts "Latest date: #{latest_date}"
-
 	# Select (i.e keep) those rows whose date is earlier than the earliest date in the new file
 	database_data = database_data.select do |row| 
 		if row.header_row? 
 			true
 		else
-			puts row["Date"]
 			row["Date"] ? Date.parse(row["Date"]) < Date.parse(earliest_date) : false
 		end
 	end
 
 	#Add AdWords data to the database data.
 	adwords_ad_data.each do |row|
-			database_data << [row["Date"],
-							Date.parse(row["Date"]).strftime('%A'),
-							row["Ad ID"],
-							row["Campaign"],
-							row["Ad Group"],
-							row["Impressions"],
-							row["Clicks"],
-							row["Cost"],
-							row["Lead Request Users"],
-							row["Leads"],
-							row["Clickouts"],
-							row["Lead Revenue"],
-							row["Clickout Revenue"],
-							row["Total Revenue"],
-							row["Position Weight"],
-							Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
-							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
-							row["Device"],
-							row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
-							row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
-							row["Lead Users"],
-							"adwords", # Network
-							row["Original Source"]
-						 ]
-		end
+		database_data << [row["Date"],
+						Date.parse(row["Date"]).strftime('%A'),
+						row["Ad ID"],
+						row["Campaign"],
+						row["Ad Group"],
+						row["Impressions"],
+						row["Clicks"],
+						row["Cost"],
+						row["Lead Request Users"],
+						row["Leads"],
+						row["Clickouts"],
+						row["Lead Revenue"],
+						row["Clickout Revenue"],
+						row["Total Revenue"],
+						row["Position Weight"],
+						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
+						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+						row["Device"],
+						row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
+						row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
+						row["Lead Users"],
+						"adwords", # Network
+						row["Original Source"]
+					 ]
+	end
+
+	#Add Bing data to the database data.
+	bing_ad_data.each do |row|
+		database_data << [row["Date"],
+						Date.parse(row["Date"]).strftime('%A'),
+						row["Ad ID"],
+						row["Campaign"],
+						row["Ad Group"],
+						row["Impressions"],
+						row["Clicks"],
+						row["Cost"],
+						row["Lead Request Users"],
+						row["Leads"],
+						row["Clickouts"],
+						row["Lead Revenue"],
+						row["Clickout Revenue"],
+						row["Total Revenue"],
+						row["Position Weight"],
+						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
+						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+						row["Device"],
+						row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
+						row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
+						row["Lead Users"],
+						"BingAds", # Network
+						row["Original Source"]
+					 ]
+	end
+
+	revenue_data.each do |row|
+		campaign = "{Not Found}"
+		ad_group = "{Not Found}"
+		# if ad_id_row = database_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
+		# 	campaign =  ad_id_row["Campaign"]
+		# 	ad_group =  ad_id_row["Ad Group"]
+		# end
+
+		niche = campaign.string_between_markers "[", "]"
+		seed = campaign == "{Not Found}" ? "{Not Found}" : campaign.string_between_markers("{", " +")
+
+		database_data << [row["Date"],
+						Date.parse(row["Date"]).strftime('%A'),
+						row["Ad ID"],
+						campaign,
+						ad_group,
+						row["Impressions"],
+						row["Clicks"],
+						row["Cost"],
+						row["Lead Request Users"],
+						row["Leads"],
+						row["Clickouts"],
+						row["Lead Revenue"],
+						row["Clickout Revenue"],
+						row["Total Revenue"],
+						row["Position Weight"],
+						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
+						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+						row["Device"],
+						niche || "{Not Found}",
+						seed || "{Not Found}",
+						row["Lead Users"],
+						row["Network"],
+						row["Original Source"]
+					 ]
+	end
 
 	CSV.open("!!!" + output_filename, "wb") do |csv|
 		database_data.each do |row|
 			csv << row
 		end
 	end
-
-	`say "Script Done!"`
-	exit # For testing only
-
-
-	CSV.open("!!!" + output_filename, "a") do |csv|
-
-		bing_ad_data.each do |row|
-			csv << [row["Date"],
-							Date.parse(row["Date"]).strftime('%A'),
-							row["Ad ID"],
-							row["Campaign"],
-							row["Ad Group"],
-							row["Impressions"],
-							row["Clicks"],
-							row["Cost"],
-							row["Lead Request Users"],
-							row["Leads"],
-							row["Clickouts"],
-							row["Lead Revenue"],
-							row["Clickout Revenue"],
-							row["Total Revenue"],
-							row["Position Weight"],
-							Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
-							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
-							row["Device"],
-							row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
-							row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
-							row["Lead Users"],
-							"BingAds", # Network
-							row["Original Source"]
-						 ]
-		end
-		
-		revenue_data.each do |row|
-			campaign = "{Not Found}"
-			ad_group = "{Not Found}"
-			if ad_id_row = adwords_ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
-				campaign =  ad_id_row["Campaign"]
-				ad_group =  ad_id_row["Ad Group"]
-			elsif ad_id_row = bing_ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
-				campaign =  ad_id_row["Campaign"]
-				ad_group =  ad_id_row["Ad Group"]
-			end
-
-			niche = campaign.string_between_markers "[", "]"
-			seed = campaign == "{Not Found}" ? "{Not Found}" : campaign.string_between_markers("{", " +")
-
-			csv << [row["Date"],
-							Date.parse(row["Date"]).strftime('%A'),
-							row["Ad ID"],
-							campaign,
-							ad_group,
-							row["Impressions"],
-							row["Clicks"],
-							row["Cost"],
-							row["Lead Request Users"],
-							row["Leads"],
-							row["Clickouts"],
-							row["Lead Revenue"],
-							row["Clickout Revenue"],
-							row["Total Revenue"],
-							row["Position Weight"],
-							Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
-							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
-							row["Device"],
-							niche || "{Not Found}",
-							seed || "{Not Found}",
-							row["Lead Users"],
-							row["Network"],
-							row["Original Source"]
-						 ]
-		end
-	end		
 end
 
 def estimated_impression_share (impression_share_string)
