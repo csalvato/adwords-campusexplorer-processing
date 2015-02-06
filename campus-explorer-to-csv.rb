@@ -174,7 +174,7 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
 							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
 							row["Device"],
-							row["Niche"],
+							row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
 							row["SEED"],
 							row["Lead Users"],
 							row["Network"],
@@ -186,6 +186,7 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 			ad_id_row = ad_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
 			campaign =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Campaign"]
 			ad_group =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Ad Group"]
+			niche = campaign.string_between_markers "[", "]"
 
 			csv << [row["Date"],
 							Date.parse(row["Date"]).strftime('%A'),
@@ -205,7 +206,7 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
 							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
 							row["Device"],
-							row["Niche"],
+							niche || "{Not Found}",
 							row["SEED"],
 							row["Lead Users"],
 							row["Network"],
