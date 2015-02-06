@@ -199,7 +199,8 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 
 	#Add AdWords data to the database data.
 	adwords_ad_data.each do |row|
-		database_data << [row["Date"],
+		headers = database_data.first
+		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
 						row["Campaign"],
@@ -223,11 +224,13 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						"adwords", # Network
 						row["Original Source"]
 					 ]
+		database_data << CSV::Row.new(headers, fields)
 	end
 
 	#Add Bing data to the database data.
 	bing_ad_data.each do |row|
-		database_data << [row["Date"],
+		headers = database_data.first
+		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
 						row["Campaign"],
@@ -251,20 +254,23 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						"BingAds", # Network
 						row["Original Source"]
 					 ]
+		database_data << CSV::Row.new(headers, fields)
 	end
 
 	revenue_data.each do |row|
 		campaign = "{Not Found}"
 		ad_group = "{Not Found}"
-		# if ad_id_row = database_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"]}
-		# 	campaign =  ad_id_row["Campaign"]
-		# 	ad_group =  ad_id_row["Ad Group"]
-		# end
+
+		if ad_id_row = database_data.find {|ad_row| ad_row['Ad ID'] == row["Ad ID"] }
+			campaign =  ad_id_row["Campaign"]
+			ad_group =  ad_id_row["Ad Group"]
+		end
 
 		niche = campaign.string_between_markers "[", "]"
 		seed = campaign == "{Not Found}" ? "{Not Found}" : campaign.string_between_markers("{", " +")
 
-		database_data << [row["Date"],
+		headers = database_data.first
+		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
 						campaign,
@@ -288,6 +294,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Network"],
 						row["Original Source"]
 					 ]
+		database_data << CSV::Row.new(headers, fields)
 	end
 
 	CSV.open("!!!" + output_filename, "wb") do |csv|
