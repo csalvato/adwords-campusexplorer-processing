@@ -1,3 +1,4 @@
 *.csv
+!"Koodlu Database.csv"
 *.xls
 .DS_Store
