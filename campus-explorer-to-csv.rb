@@ -55,7 +55,6 @@ def process_ce_data_file (input_filename, output_filename)
 			# Process the utm_campaign string as passed through from Source Code into separate values in their own cells
 			source_data = process_source_code row["Source Code"]
 			counter += 1
-			puts "trying row #{counter} which has KW #{source_data[:keyword]}"
 			# Is there data?
 			if has_campusexplorer_data? row, source_data
 				# Write ALL values out to processed CSV file
