@@ -175,9 +175,9 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
 							row["Device"],
 							row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
-							row["SEED"],
+							row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
 							row["Lead Users"],
-							row["Network"],
+							"adwords", # Network
 							row["Original Source"]
 						 ]
 		end
@@ -187,6 +187,7 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 			campaign =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Campaign"]
 			ad_group =  ad_id_row.nil? ? "{Not Found}" : ad_id_row["Ad Group"]
 			niche = campaign.string_between_markers "[", "]"
+			seed = campaign == "{Not Found}" ? "{Not Found}" : campaign.string_between_markers("{", " +")
 
 			csv << [row["Date"],
 							Date.parse(row["Date"]).strftime('%A'),
@@ -207,7 +208,7 @@ def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
 							Date.parse(row["Date"]).strftime('%Y-%m-%d'),
 							row["Device"],
 							niche || "{Not Found}",
-							row["SEED"],
+							seed || "{Not Found}",
 							row["Lead Users"],
 							row["Network"],
 							row["Original Source"]
@@ -309,15 +310,7 @@ def process_source_code (sourcecode)
 	end
 
 	# Decode Network Type
-	network = sourcecode.string_between_markers "_n*", "_"
-	case network
-	when "g"
-		network = "Google"
-	when "s"
-		network = "Search"
-	when "d"
-		network = "Display"
-	end
+	network = sourcecode.string_between_markers "_src*", "_" || "adwords"
 
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
