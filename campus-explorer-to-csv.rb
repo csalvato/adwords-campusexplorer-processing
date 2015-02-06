@@ -48,7 +48,6 @@ def process_ce_data_file (input_filename, output_filename)
 				"Ad Position",
 				"Network",
 				"Widget Location",
-				"Niche",
 				"Original Source"]
 		# For each row from Campus Explorer CSV File
 		CSV.foreach(input_filename, :headers => true, :return_headers => false, :encoding => 'windows-1251:utf-8') do |row|
@@ -80,7 +79,6 @@ def process_ce_data_file (input_filename, output_filename)
 						source_data[:ad_position],
 						source_data[:network],
 						source_data[:widget_location],
-						source_data[:niche],
 						row["Source Code"]
 						]
 			end
@@ -127,38 +125,37 @@ end
 def process_ad_bing_data_file (input_filename, output_filename)
 	# Convert to CSV
 	bing_csv_filename = "bing-prepped.csv"
-	puts "Creating #{bing_csv_filename}"
-	bing_tsv_to_csv input_filename, bing_csv_filename
-	# CSV.open(output_filename, "wb") do |csv|
-	# 	# Create Header Row
-	# 	csv << ["Date",
-	# 			"Impressions",
-	# 			"Clicks",
-	# 			"Cost",
-	# 			"Average Position",
-	# 			"Position Weight",
-	# 			"Network",
-	# 			"Device",
-	# 			"Campaign",
-	# 			"Ad Group",
-	# 			"Ad ID",
-	# 			"Niche"]
-	# 	counter = 0
-	# 	CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
-	# 		csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
-	# 				row["Impressions"],
-	# 				row["Clicks"],
-	# 				row["Cost"],
-	# 				row["Avg. position"],
-	# 				position_weight(row["Impressions"], row["Avg. position"]),
-	# 				row["Network (with search partners)"],
-	# 				device( row["Device"] ),
-	# 				row["Campaign"],
-	# 				row["Ad group"],
-	# 				row["Ad ID"],
-	# 				niche(row["Campaign"])]
-	# 	end
-	# end
+	bing_xlsx_to_csv input_filename, bing_csv_filename
+	CSV.open(output_filename, "wb") do |csv|
+		# Create Header Row
+		csv << ["Date",
+				"Impressions",
+				"Clicks",
+				"Cost",
+				"Average Position",
+				"Position Weight",
+				"Network",
+				"Device",
+				"Campaign",
+				"Ad Group",
+				"Ad ID",
+				"Niche"]
+		counter = 0
+		CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
+					row["Impressions"],
+					row["Clicks"],
+					row["Cost"],
+					row["Avg. position"],
+					position_weight(row["Impressions"], row["Avg. position"]),
+					row["Network (with search partners)"],
+					device( row["Device"] ),
+					row["Campaign"],
+					row["Ad group"],
+					row["Ad ID"],
+					niche(row["Campaign"])]
+		end
+	end
 end
 
 def combine_all_files(revenue_data_filename, ad_data_filename, output_filename)
@@ -286,12 +283,6 @@ def device(device_string)
 
 end	
 
-def niche(campaign_name)
-	ret_val = "CNA"
-	ret_val = "LPN" if campaign_name.include? "LPN"
-	ret_val
-end
-
 def adwords_tsv_to_csv (tsv_filename, csv_filename)
 	CSV.open(csv_filename, "wb:utf-8") do |csv|
 		File.open(tsv_filename, "rb:utf-16le") do |file|
@@ -311,7 +302,7 @@ def adwords_tsv_to_csv (tsv_filename, csv_filename)
 	end
 end	
 
-def bing_tsv_to_csv (xlsx_filename, csv_filename)
+def bing_xlsx_to_csv (xlsx_filename, csv_filename)
 	csv_file = File.open(csv_filename, "w")
 	xlsx_file = Roo::Excelx.new(xlsx_filename)
 	10.upto(xlsx_file.last_row) do |line|
@@ -384,13 +375,6 @@ def process_source_code (sourcecode)
 		widget_location = "Content CTA Lightbox"
 	end
 
-	# Decode Niche
-	lp = sourcecode.string_between_markers "-lp*", "_"
-	unless lp.nil?	
-		niche = "CNA" if lp.include? "cna"
-		niche = "LPN" if lp.include? "lpn"
-	end
-
 	{ 	
 		lp: lp,
 		source: (sourcecode.string_between_markers "_src*", "_"),
@@ -405,7 +389,6 @@ def process_source_code (sourcecode)
 		ad_position: ad_position,
 		network: network,
 		widget_location: widget_location,
-		niche: niche
 	}
 end
 
