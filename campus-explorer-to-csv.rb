@@ -139,15 +139,16 @@ def process_ad_bing_data_file (input_filename, output_filename)
 				"Ad ID"]
 		counter = 0
 		CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
-			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
+			counter += 1
+			csv << [Date.strptime(row["Gregorian date"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
 					row["Impressions"],
 					row["Clicks"],
-					row["Cost"],
+					row["Spend"],
 					row["Avg. position"],
 					position_weight(row["Impressions"], row["Avg. position"]),
-					row["Network (with search partners)"],
-					device( row["Device"] ),
-					row["Campaign"],
+					row["Network"],
+					device( row["Device type"] ),
+					row["Campaign name"],
 					row["Ad group"],
 					row["Ad ID"]]
 		end
@@ -275,9 +276,18 @@ def device(device_string)
 		"dt"
 	when "Tablets with full browsers"
 		"dt"
+	when "Computer"
+		"dt"
+	when "Tablet"
+		"dt"
+	when "Smartphone"
+		"mb"
+	when "Smartphones"
+		"mb"
 	end
 
 end	
+
 
 def adwords_tsv_to_csv (tsv_filename, csv_filename)
 	CSV.open(csv_filename, "wb:utf-8") do |csv|
@@ -301,7 +311,7 @@ end
 def bing_xlsx_to_csv (xlsx_filename, csv_filename)
 	csv_file = File.open(csv_filename, "w")
 	xlsx_file = Roo::Excelx.new(xlsx_filename)
-	10.upto(xlsx_file.last_row) do |line|
+	10.upto(xlsx_file.last_row - 2) do |line|
   	csv_file.write CSV.generate_line xlsx_file.row(line)
 	end
 end	
