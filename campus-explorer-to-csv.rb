@@ -124,6 +124,53 @@ def process_ad_adwords_data_file (input_filename, output_filename)
 	end
 end
 
+def process_campaign_adwords_data_file (input_filename, output_filename)
+	# Convert to CSV
+	adwords_csv_filename = "adwords-campaign-prepped.csv"
+	adwords_tsv_to_csv input_filename, adwords_csv_filename
+	CSV.open(output_filename, "wb") do |csv|
+		# Create Header Row
+
+		csv << ["Date",
+				"Impressions",
+				"Clicks",
+				"Cost",
+				"Average Position",
+				"Position Weight",
+				"Network",
+				"Device",
+				"Campaign",
+				"Campaign ID",
+				"Est. Impression Share",
+				"Total Impressions",
+				"Search Lost IS (rank)",
+				"Search Lost IS (budget)"]
+
+		counter = 0
+		CSV.foreach(adwords_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [Date.strptime(row["Day"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
+					row["Impressions"],
+					row["Clicks"],
+					row["Cost"],
+					row["Avg. position"],
+					position_weight(row["Impressions"], row["Avg. position"]),
+					row["Network (with search partners)"],
+					device( row["Device"] ),
+					row["Campaign"],
+					row["Campaign ID"],
+					estimated_impression_share( row["Search Impr. share"] ),
+					total_impressions( row["Impressions"], row["Search Impr. share"]),
+					row["Search Lost IS (rank)"],
+					row["Search Lost IS (budget)"]
+				]
+		end
+	end
+end
+
+def total_impressions( impressions, impression_share)
+	(impressions.to_f/estimated_impression_share(impression_share) ).round.to_s
+end
+
 def process_ad_bing_data_file (input_filename, output_filename)
 	# Convert to CSV
 	bing_csv_filename = "bing-prepped.csv"
@@ -475,15 +522,23 @@ def process_source_code (sourcecode)
 	}
 end
 
-process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
-process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
-begin
-	process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
-rescue
-	puts "ERROR: The Bing XLSX file failed to be read.\nTry opening and saving file in excel first?"
-	exit
+def update_database
+	process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
+	process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
+	begin
+		process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
+	rescue
+		puts "ERROR: The Bing XLSX file failed to be read.\nTry opening and saving file in excel first?"
+		exit
+	end
+	combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database.csv")
 end
-combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database.csv")
+
+
+
+# update_database
+
+process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
 
 puts "Script Complete!"
 'say "Script Finished!"'
