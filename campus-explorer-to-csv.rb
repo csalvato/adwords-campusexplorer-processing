@@ -8,7 +8,7 @@ require 'csv'
 require 'iconv'
 require 'date'
 require 'roo'
-
+require 'fileutils'
 
 class String
   def string_between_markers marker1, marker2
@@ -298,11 +298,17 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		database_data << CSV::Row.new(headers, fields)
 	end
 
-	CSV.open("!!!" + output_filename, "wb") do |csv|
+	temp_output_filename = "!!!" + output_filename
+	CSV.open(temp_output_filename, "wb") do |csv|
 		database_data.each do |row|
 			csv << row
 		end
 	end
+
+	# Force overwrite old DB with new file
+	# Do this just in case there is a problem while writing and the DB becomes corrupt
+	# so the old version will not be re-written with a corrupt version.
+	FileUtils.mv(temp_output_filename, output_filename, {:force => true})
 end
 
 def estimated_impression_share (impression_share_string)
@@ -466,7 +472,7 @@ end
 process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
 process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
-combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database test.csv")
+combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database.csv")
 
 puts "Script Complete!"
 'say "Script Finished!"'
