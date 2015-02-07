@@ -9,6 +9,7 @@ require 'iconv'
 require 'date'
 require 'roo'
 
+
 class String
   def string_between_markers marker1, marker2
     self[/#{Regexp.escape(marker1)}(.*?)(#{Regexp.escape(marker2)}|\z)/m, 1]
@@ -254,7 +255,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						"BingAds", # Network
 						row["Original Source"]
 					 ]
-		database_data << new_row
+		database_data << CSV::Row.new(headers, fields)
 	end
 
 	revenue_data.each do |row|
