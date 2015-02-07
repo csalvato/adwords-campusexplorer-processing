@@ -288,7 +288,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Position Weight"],
 						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
 						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
-						row["Device"],
+						row["Device2"] || row["Device"],
 						niche || "{Not Found}",
 						seed || "{Not Found}",
 						row["Lead Users"],
@@ -309,6 +309,12 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 	# Do this just in case there is a problem while writing and the DB becomes corrupt
 	# so the old version will not be re-written with a corrupt version.
 	FileUtils.mv(temp_output_filename, output_filename, {:force => true})
+	# FileUtils.rm(Dir.glob "*erformance*") # Delete files with "Performance" (Ad Reports)
+	# FileUtils.rm(Dir.glob "*ce-activity-summary*") # Delete CE activity summary files
+
+	FileUtils.rm(Dir.glob "adwords*") # Delete files with "adwords" (Temp Files)
+	FileUtils.rm(Dir.glob "bing*") # Delete files with "bing" (Temp Files)
+	FileUtils.rm(Dir.glob "*Campus Explorer*") # Delete the temp CE Rev File
 end
 
 def estimated_impression_share (impression_share_string)
@@ -471,7 +477,12 @@ end
 
 process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
-process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
+begin
+	process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
+rescue
+	puts "ERROR: The Bing XLSX file failed to be read.\nTry opening and saving file in excel first?"
+	exit
+end
 combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database.csv")
 
 puts "Script Complete!"
