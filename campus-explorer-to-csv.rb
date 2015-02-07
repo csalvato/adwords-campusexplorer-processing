@@ -199,7 +199,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 
 	#Add AdWords data to the database data.
 	adwords_ad_data.each do |row|
-		headers = database_data.first
+		headers = database_data.first.headers
 		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
@@ -229,7 +229,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 
 	#Add Bing data to the database data.
 	bing_ad_data.each do |row|
-		headers = database_data.first
+		headers = database_data.first.headers
 		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
@@ -254,22 +254,14 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						"BingAds", # Network
 						row["Original Source"]
 					 ]
-		database_data << CSV::Row.new(headers, fields)
+		database_data << new_row
 	end
 
 	revenue_data.each do |row|
 		campaign = "{Not Found}"
 		ad_group = "{Not Found}"
 
-		ad_id_row = database_data.find do |ad_row|
-			if ad_row['Ad ID'] == "5737839981"
-				puts ad_row['Ad ID']
-				puts row["Ad ID"]
-			end
-			ad_row['Ad ID'] == row["Ad ID"]
-		end
-
-		if ad_id_row 
+		if ad_id_row = database_data.find { |ad_row| ad_row['Ad ID'] == row["Ad ID"] }
 			campaign =  ad_id_row["Campaign"]
 			ad_group =  ad_id_row["Ad Group"]
 		end
@@ -277,7 +269,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		niche = campaign.string_between_markers "[", "]"
 		seed = campaign == "{Not Found}" ? "{Not Found}" : campaign.string_between_markers("{", " +")
 
-		headers = database_data.first
+		headers = database_data.first.headers
 		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
