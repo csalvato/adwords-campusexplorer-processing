@@ -160,8 +160,8 @@ def process_campaign_adwords_data_file (input_filename, output_filename)
 					row["Campaign ID"],
 					estimated_impression_share( row["Search Impr. share"] ),
 					total_impressions( row["Impressions"], row["Search Impr. share"]),
-					row["Search Lost IS (rank)"],
-					row["Search Lost IS (budget)"]
+					estimated_lost_impression_share(row["Search Lost IS (rank)"]),
+					estimated_lost_impression_share(row["Search Lost IS (budget)"])
 				]
 		end
 	end
@@ -200,6 +200,49 @@ def process_ad_bing_data_file (input_filename, output_filename)
 					row["Campaign name"],
 					row["Ad group"],
 					row["Ad ID"].to_i.to_s]
+		end
+	end
+end
+
+def process_campaign_bing_data_file (input_filename, output_filename)
+	# Convert to CSV
+	bing_csv_filename = "bing-campaign-prepped.csv"
+	bing_xlsx_to_csv input_filename, bing_csv_filename
+	CSV.open(output_filename, "wb") do |csv|
+		# Create Header Row
+
+		csv << ["Date",
+				"Impressions",
+				"Clicks",
+				"Cost",
+				"Average Position",
+				"Position Weight",
+				"Network",
+				"Device",
+				"Campaign",
+				"Campaign ID",
+				"Est. Impression Share",
+				"Total Impressions",
+				"Search Lost IS (rank)",
+				"Search Lost IS (budget)"]
+
+		counter = 0
+		CSV.foreach(bing_csv_filename, :headers => true, :return_headers => false, :encoding => 'utf-8') do |row|			
+			csv << [Date.strptime(row["Gregorian date"], '%Y-%m-%d').strftime("%Y-%m-%d %a"),
+					row["Impressions"],
+					row["Clicks"],
+					row["Spend"],
+					row["Avg. position"],
+					position_weight(row["Impressions"], row["Avg. position"]),
+					row["Network"],
+					device( row["Device type"] ),
+					row["Campaign name"],
+					row["Campaign ID"],
+					estimated_impression_share( row["Impression share (%)"] ),
+					total_impressions( row["Impressions"], row["Impression share (%)"]),
+					estimated_lost_impression_share( (row["Impression share lost to bid (%)"].to_f + row["Impression share lost to rank (%)"].to_f).to_s),
+					estimated_lost_impression_share( row["Impression share lost to budget (%)"] )
+				]
 		end
 	end
 end
@@ -366,10 +409,21 @@ end
 
 def estimated_impression_share (impression_share_string)
 	case impression_share_string
-	when "< 10%"
+	when "< 10%" # When calculating impression share
 		0.05
 	when " --"
-		1
+		0.01
+	else
+		impression_share_string.to_f / 100
+	end
+end
+
+def estimated_lost_impression_share (impression_share_string)
+	case impression_share_string
+	when "> 90%" # When calculating impression share
+		0.95
+	when " --"
+		0.99
 	else
 		impression_share_string.to_f / 100
 	end
@@ -539,6 +593,7 @@ end
 # update_database
 
 process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
+process_campaign_adwords_data_file("Campaign_Performance_Report.xlsx", "bing-campaigns.csv")
 
 puts "Script Complete!"
 'say "Script Finished!"'
