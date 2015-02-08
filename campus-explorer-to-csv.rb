@@ -168,7 +168,11 @@ def process_campaign_adwords_data_file (input_filename, output_filename)
 end
 
 def total_impressions( impressions, impression_share)
-	(impressions.to_f/estimated_impression_share(impression_share) ).round.to_s
+	impressions = impressions.to_f
+	impression_share = estimated_impression_share(impression_share)
+	puts impressions.inspect
+	puts impression_share.inspect
+	(impressions/impression_share).round.to_s
 end
 
 def process_ad_bing_data_file (input_filename, output_filename)
@@ -409,21 +413,26 @@ end
 
 def estimated_impression_share (impression_share_string)
 	case impression_share_string
-	when "< 10%" # When calculating impression share
+	when "< 10%" # When calculating for adwords
 		0.05
-	when " --"
-		0.01
+	when "0.0" # When calculating for bing
+		0.02
+	when " --", nil
+		1
 	else
 		impression_share_string.to_f / 100
 	end
 end
 
 def estimated_lost_impression_share (impression_share_string)
+	puts impression_share_string
 	case impression_share_string
-	when "> 90%" # When calculating impression share
+	when "> 90%" # When calculating for adwords
 		0.95
-	when " --"
-		0.99
+	when "100.0" # When calculating for bing
+		0.98
+	when " --", nil
+		0
 	else
 		impression_share_string.to_f / 100
 	end
@@ -478,6 +487,7 @@ def adwords_tsv_to_csv (tsv_filename, csv_filename)
 end	
 
 def bing_xlsx_to_csv (xlsx_filename, csv_filename)
+	puts "Converting: #{xlsx_filename} from XLSX to CSV"
 	csv_file = File.open(csv_filename, "w")
 	xlsx_file = Roo::Excelx.new(xlsx_filename)
 	10.upto(xlsx_file.last_row - 2) do |line|
@@ -582,7 +592,7 @@ def update_database
 	begin
 		process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
 	rescue
-		puts "ERROR: The Bing XLSX file failed to be read.\nTry opening and saving file in excel first?"
+		puts "ERROR: The Bing Ad Performance XLSX file failed to be read.\nTry opening and saving file in excel first?"
 		exit
 	end
 	combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database.csv")
@@ -592,8 +602,13 @@ end
 
 # update_database
 
-process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
-process_campaign_adwords_data_file("Campaign_Performance_Report.xlsx", "bing-campaigns.csv")
+# process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
+begin
+	process_campaign_bing_data_file("Campaign_Performance_Report.xlsx", "bing-campaigns.csv")
+rescue
+	puts "ERROR: The Bing Campaign Performance XLSX file failed to be read.\nTry opening and saving file in excel first?"
+	exit
+end
 
 puts "Script Complete!"
 'say "Script Finished!"'
