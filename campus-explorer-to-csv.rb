@@ -630,6 +630,9 @@ def process_source_code (sourcecode)
 	network = "adwords" if network.nil?
 	network.gsub!("-sitelink", "")
 
+
+	organic? sourcecode 
+
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
 	device = sourcecode.string_between_markers("_d*", "_") || sourcecode.string_between_markers("-d*", "_")
@@ -672,6 +675,12 @@ def process_source_code (sourcecode)
 	}
 end
 
+def organic? source_code
+	# Does it have a valuetrack tag (i.e. d* for desktop/mobile)?
+	# If yes, then it is not organic.  If no, then it is.
+	sourcecode.string_between_markers "_d*", "_" ? false : true
+end
+
 def clean_up_directory
 	# Force overwrite old DB with new file
 	# Do this just in case there is a problem while writing and the DB becomes corrupt
@@ -708,7 +717,8 @@ def update_database
 	# clean_up_directory
 end
 
-update_database
+#update_database
+process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 
 puts "Script Complete!"
 'say "Script Finished!"'
