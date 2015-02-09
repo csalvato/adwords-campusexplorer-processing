@@ -600,15 +600,13 @@ def has_campusexplorer_data? (row, source_data)
 	# => YES -> if the row:
 	# has Lead Request Users
 	# has Lead Users 
-	# has Revenue 
-	# AND 
-	# has the ValueTrack fields 
+	# has Revenue
 	# AND
 	# doesn't have a curly brace (which means it was a test click) 
 	(row['Lead Users'] != "0" ||
 	row['Lead Request Users'] != "0" ||
 	row['Unreconciled Publisher Total Revenue'] != "0.00") &&
-	(source_data[:keyword] != nil && !source_data[:keyword].include?("{") )
+	!source_data[:keyword].include?("{")
 end
 
 def process_source_code (sourcecode)
@@ -634,7 +632,7 @@ def process_source_code (sourcecode)
 
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
-	device = sourcecode.string_between_markers "_d*", "_"
+	device = sourcecode.string_between_markers("_d*", "_") || sourcecode.string_between_markers("-d*", "_")
 	unless position_data.nil? || position_data == "none"
 		ad_page = position_data[0]
 		ad_position = position_data[2]
