@@ -251,39 +251,51 @@ def process_campaign_bing_data_file (input_filename, output_filename)
 	end
 end
 
-def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_data_filename, output_filename)
+def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_data_filename, adwords_imp_share_data_filename, bing_imp_share_data_filename, output_filename)
 	# Open CSVs in Memory
 	database_data = CSV.read(output_filename, :headers => true, :return_headers => true, :encoding => 'utf-8')
 	adwords_ad_data = CSV.read(adwords_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 	revenue_data = CSV.read(revenue_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 	bing_ad_data = CSV.read(bing_ad_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+	adwords_imp_share_data = CSV.read(adwords_imp_share_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
+	bing_imp_share_data = CSV.read(bing_imp_share_data_filename, :headers => true, :return_headers => false, :encoding => 'utf-8')
 
 	# Get earliest date from each file type (should be the same in each file)
-	earliest_adwords_date = adwords_ad_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	earliest_adwords_ad_date = adwords_ad_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	earliest_adwords_imp_share_date = adwords_imp_share_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 	earliest_revenue_date = revenue_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
-	earliest_bing_date = bing_ad_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	earliest_bing_ad_date = bing_ad_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	earliest_bing_imp_share_date = bing_imp_share_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 
-	if earliest_adwords_date != earliest_bing_date &&  
-		 earliest_bing_date != earliest_revenue_date
+
+	if earliest_adwords_ad_date != earliest_bing_ad_date ||  
+		 earliest_adwords_ad_date != earliest_revenue_date ||
+		 earliest_adwords_ad_date != earliest_adwords_imp_share_date ||
+		 earliest_adwords_ad_date != earliest_bing_imp_share_date
 		raise Exception, "All files do not start on the same date"
 	end
 	
-	earliest_date = earliest_adwords_date
+	earliest_date = earliest_adwords_ad_date
 	
 
 	# Get latest date from each file type (should be the same in each file)
 	latest_adwords_date = adwords_ad_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	latest_adwords_imp_share_date = adwords_imp_share_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 	latest_revenue_date = revenue_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 	latest_bing_date = bing_ad_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
+	latest_bing_imp_share_date = bing_imp_share_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 
-	if latest_adwords_date != latest_bing_date && 
-		 latest_bing_date != latest_revenue_date
+	if latest_adwords_date != latest_bing_date || 
+		 latest_adwords_date != latest_revenue_date ||
+		 latest_adwords_date != latest_adwords_imp_share_date ||
+		 latest_adwords_date != latest_bing_imp_share_date
 		raise Exception, "All files do not end on the same date"
 	end
 	
 	latest_date = latest_adwords_date
 
 	# Select (i.e keep) those rows whose date is earlier than the earliest date in the new file
+	# (note, this delete all other rows...so this removed overlap)
 	database_data = database_data.select do |row| 
 		if row.header_row? 
 			true
@@ -292,9 +304,10 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		end
 	end
 
-	#Add AdWords data to the database data.
+	#Add AdWords ad data to the database data.
 	adwords_ad_data.each do |row|
 		headers = database_data.first.headers
+		puts "Average Position: " + row["Average Position"].inspect
 		fields = [row["Date"],
 						Date.parse(row["Date"]).strftime('%A'),
 						row["Ad ID"],
@@ -309,6 +322,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Lead Revenue"],
 						row["Clickout Revenue"],
 						row["Total Revenue"],
+						row["Average Position"],
 						row["Position Weight"],
 						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
 						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
@@ -317,12 +331,16 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
 						row["Lead Users"],
 						"adwords", # Network
-						row["Original Source"]
+						row["Original Source"],
+						row["Est. Impression Share"],
+						row["Total Impressions"],
+						row["Search Lost IS (rank)"],
+						row["Search Lost IS (budget)"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
 
-	#Add Bing data to the database data.
+	#Add Bing ad data to the database data.
 	bing_ad_data.each do |row|
 		headers = database_data.first.headers
 		fields = [row["Date"],
@@ -339,6 +357,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Lead Revenue"],
 						row["Clickout Revenue"],
 						row["Total Revenue"],
+						row["Average Position"],
 						row["Position Weight"],
 						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
 						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
@@ -347,7 +366,81 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
 						row["Lead Users"],
 						"BingAds", # Network
-						row["Original Source"]
+						row["Original Source"],
+						row["Est. Impression Share"],
+						row["Total Impressions"],
+						row["Search Lost IS (rank)"],
+						row["Search Lost IS (budget)"]
+					 ]
+		database_data << CSV::Row.new(headers, fields)
+	end
+
+	# Add AdWords Impression Share data to the database data
+	adwords_imp_share_data.each do |row|
+		headers = database_data.first.headers
+		fields = [row["Date"],
+						Date.parse(row["Date"]).strftime('%A'),
+						row["Ad ID"],
+						row["Campaign"],
+						row["Ad Group"],
+						"", #row["Impressions"],
+						"", #row["Clicks"],
+						"", #row["Cost"],
+						row["Lead Request Users"],
+						row["Leads"],
+						row["Clickouts"],
+						row["Lead Revenue"],
+						row["Clickout Revenue"],
+						row["Total Revenue"],
+						"", #row["Average Position"],
+						"", #row["Position Weight"],
+						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
+						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+						row["Device"],
+						row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
+						row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
+						row["Lead Users"],
+						"adwords", # Network
+						row["Original Source"],
+						row["Est. Impression Share"],
+						row["Total Impressions"],
+						row["Search Lost IS (rank)"],
+						row["Search Lost IS (budget)"]
+					 ]
+		database_data << CSV::Row.new(headers, fields)
+	end
+
+	# Add Bing Impression Share data to the database data
+	bing_imp_share_data.each do |row|
+		headers = database_data.first.headers
+		fields = [row["Date"],
+						Date.parse(row["Date"]).strftime('%A'),
+						row["Ad ID"],
+						row["Campaign"],
+						row["Ad Group"],
+						"", #row["Impressions"],
+						"", #row["Clicks"],
+						"", #row["Cost"],
+						row["Lead Request Users"],
+						row["Leads"],
+						row["Clickouts"],
+						row["Lead Revenue"],
+						row["Clickout Revenue"],
+						row["Total Revenue"],
+						"", #row["Average Position"],
+						"", # row["Position Weight"],
+						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
+						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+						row["Device"],
+						row["Campaign"].string_between_markers("[", "]") || "{Not Found}", # Niche
+						row["Campaign"].string_between_markers("{", " +") || "{Not Found}", # Seed
+						row["Lead Users"],
+						"BingAds", # Network
+						row["Original Source"],
+						row["Est. Impression Share"],
+						row["Total Impressions"],
+						row["Search Lost IS (rank)"],
+						row["Search Lost IS (budget)"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -379,6 +472,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Lead Revenue"],
 						row["Clickout Revenue"],
 						row["Total Revenue"],
+						row["Avg. Position"],
 						row["Position Weight"],
 						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
 						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
@@ -387,7 +481,11 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						seed || "{Not Found}",
 						row["Lead Users"],
 						row["Network"],
-						row["Original Source"]
+						row["Original Source"],
+						row["Est. Impression Share"],
+						row["Total Impressions"],
+						row["Search Lost IS (rank)"],
+						row["Search Lost IS (budget)"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -398,17 +496,6 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 			csv << row
 		end
 	end
-
-	# Force overwrite old DB with new file
-	# Do this just in case there is a problem while writing and the DB becomes corrupt
-	# so the old version will not be re-written with a corrupt version.
-	FileUtils.mv(temp_output_filename, output_filename, {:force => true})
-	# FileUtils.rm(Dir.glob "*erformance*") # Delete files with "Performance" (Ad Reports)
-	# FileUtils.rm(Dir.glob "*ce-activity-summary*") # Delete CE activity summary files
-
-	FileUtils.rm(Dir.glob "adwords*") # Delete files with "adwords" (Temp Files)
-	FileUtils.rm(Dir.glob "bing*") # Delete files with "bing" (Temp Files)
-	FileUtils.rm(Dir.glob "*Campus Explorer*") # Delete the temp CE Rev File
 end
 
 def estimated_impression_share (impression_share_string)
@@ -543,6 +630,7 @@ def process_source_code (sourcecode)
 	# Decode Network Type
 	network = sourcecode.string_between_markers "_src*", "_"
 	network = "adwords" if network.nil?
+	network.gsub!("-sitelink", "")
 
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
@@ -586,29 +674,43 @@ def process_source_code (sourcecode)
 	}
 end
 
+def clean_up_directory
+	# Force overwrite old DB with new file
+	# Do this just in case there is a problem while writing and the DB becomes corrupt
+	# so the old version will not be re-written with a corrupt version.
+	FileUtils.mv(temp_output_filename, output_filename, {:force => true})
+	# FileUtils.rm(Dir.glob "*erformance*") # Delete files with "Performance" (Ad Reports)
+	# FileUtils.rm(Dir.glob "*ce-activity-summary*") # Delete CE activity summary files
+
+	FileUtils.rm(Dir.glob "adwords*") # Delete files with "adwords" (Temp Files)
+	FileUtils.rm(Dir.glob "bing*") # Delete files with "bing" (Temp Files)
+	FileUtils.rm(Dir.glob "*Campus Explorer*") # Delete the temp CE Rev File
+end
+
 def update_database
 	process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 	process_ad_adwords_data_file("Ad performance report.csv", "adwords-ads.csv")
+	process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
+
 	begin
 		process_ad_bing_data_file("Ad_Performance_Report.xlsx", "bing-ads.csv")
 	rescue
 		puts "ERROR: The Bing Ad Performance XLSX file failed to be read.\nTry opening and saving file in excel first?"
 		exit
 	end
-	combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "Koodlu Database.csv")
+	
+	begin
+		process_campaign_bing_data_file("Campaign_Performance_Report.xlsx", "bing-campaigns.csv")
+	rescue
+		puts "ERROR: The Bing Campaign Performance XLSX file failed to be read.\nTry opening and saving file in excel first?"
+		exit
+	end
+
+	combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "adwords-campaigns.csv", "bing-campaigns.csv", "Koodlu Database test.csv")
+	# clean_up_directory
 end
 
-
-
-# update_database
-
-# process_campaign_adwords_data_file("Campaign performance report.csv", "adwords-campaigns.csv")
-begin
-	process_campaign_bing_data_file("Campaign_Performance_Report.xlsx", "bing-campaigns.csv")
-rescue
-	puts "ERROR: The Bing Campaign Performance XLSX file failed to be read.\nTry opening and saving file in excel first?"
-	exit
-end
+update_database
 
 puts "Script Complete!"
 'say "Script Finished!"'
