@@ -83,6 +83,7 @@ def process_ce_data_file (input_filename, output_filename)
 						source_data[:ad_position],
 						source_data[:network],
 						source_data[:widget_location],
+						source_data[:organic],
 						row["Source Code"]
 						]
 			end
@@ -631,7 +632,7 @@ def process_source_code (sourcecode)
 	network.gsub!("-sitelink", "")
 
 
-	organic? sourcecode 
+	organic = organic? sourcecode ? "organic" : "paid"
 
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
@@ -672,6 +673,7 @@ def process_source_code (sourcecode)
 		ad_position: ad_position,
 		network: network,
 		widget_location: widget_location,
+		organic: organic
 	}
 end
 
