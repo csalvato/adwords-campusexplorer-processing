@@ -337,7 +337,8 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Est. Impression Share"],
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
-						row["Search Lost IS (budget)"]
+						row["Search Lost IS (budget)"],
+						row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -372,7 +373,8 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Est. Impression Share"],
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
-						row["Search Lost IS (budget)"]
+						row["Search Lost IS (budget)"],
+						row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -407,7 +409,8 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Est. Impression Share"],
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
-						row["Search Lost IS (budget)"]
+						row["Search Lost IS (budget)"],
+						row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -442,7 +445,8 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Est. Impression Share"],
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
-						row["Search Lost IS (budget)"]
+						row["Search Lost IS (budget)"],
+						row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -487,7 +491,8 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Est. Impression Share"],
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
-						row["Search Lost IS (budget)"]
+						row["Search Lost IS (budget)"],
+						row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -742,8 +747,7 @@ def update_database
 	# clean_up_directory
 end
 
-#update_database
-process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
+update_database
 
 puts "Script Complete!"
 'say "Script Finished!"'
