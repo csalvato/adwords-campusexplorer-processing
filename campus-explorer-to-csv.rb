@@ -338,7 +338,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
 						row["Search Lost IS (budget)"],
-						row["Organic"]
+						"paid" #row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -374,7 +374,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
 						row["Search Lost IS (budget)"],
-						row["Organic"]
+						"paid" #row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -410,7 +410,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
 						row["Search Lost IS (budget)"],
-						row["Organic"]
+						"paid" #row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -446,7 +446,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Total Impressions"],
 						row["Search Lost IS (rank)"],
 						row["Search Lost IS (budget)"],
-						row["Organic"]
+						"paid" #row["Organic"]
 					 ]
 		database_data << CSV::Row.new(headers, fields)
 	end
@@ -605,12 +605,11 @@ end
 
 def has_campusexplorer_data? row
 	sourcecode = row["Source Code"]
+	
 	(row['Lead Users'] != "0" ||
 	row['Lead Request Users'] != "0" ||
   row['Unreconciled Publisher Total Revenue'] != "0.00") &&
   sourcecode != nil &&
-  sourcecode != "sa-50216D3D" &&
-  !sourcecode.include?("{") &&
   sourcecode != ""
 end
 
@@ -630,7 +629,7 @@ def process_source_code (sourcecode)
 		match_type = "Broad"
 	end
 
-	organic = (organic? sourcecode) ? "organic" : "paid"
+	organic = (organic? sourcecode) ? "organic" : ""
 
 	# Decode Network Type
 	network = sourcecode.string_between_markers "_src*", "_"
@@ -702,7 +701,8 @@ def organic? sourcecode
 					(sourcecode == "sa-50216D3D-RightSidebarCNA-") ||
 					(sourcecode == "sa-50216D3D-RightSidebarLPN-") ||
 					(sourcecode == "sa-50216D3D-ContentCTAButtonCNA-") ||
-					(sourcecode == "sa-50216D3D-ContentCTAButtonLPN-"))
+					(sourcecode == "sa-50216D3D-ContentCTAButtonLPN-") ||
+					(sourcecode == "sa-50216D3D")
 	# If yes, then it is organic
 		return true
 	else 
@@ -747,7 +747,8 @@ def update_database
 	# clean_up_directory
 end
 
-update_database
+#update_database
+process_ce_data_file("ce-activity-summary.xls", "Campus Explorer Revenue.csv")
 
 puts "Script Complete!"
 'say "Script Finished!"'
