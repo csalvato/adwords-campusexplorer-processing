@@ -50,6 +50,7 @@ def process_ce_data_file (input_filename, output_filename)
 				"Ad Position",
 				"Network",
 				"Widget Location",
+				"Organic",
 				"Original Source"]
 		# For each row from Campus Explorer CSV File
 		counter = 0
@@ -58,7 +59,7 @@ def process_ce_data_file (input_filename, output_filename)
 			source_data = process_source_code row["Source Code"]
 			counter += 1
 			# Is there data?
-			if has_campusexplorer_data? row, source_data
+			if has_campusexplorer_data? row
 				# Write ALL values out to processed CSV file
 				csv << [row["Grouping"],
 						row["Widget Impressions"],
@@ -75,7 +76,7 @@ def process_ce_data_file (input_filename, output_filename)
 						source_data[:campaign_id].gsub("]",""),
 						source_data[:device],
 						source_data[:device2],
-						"'" + source_data[:keyword] + "'",
+						source_data[:keyword],
 						source_data[:match],
 						source_data[:ad_id],
 						source_data[:ad_page],
@@ -597,17 +598,15 @@ def ce_tsv_to_csv (tsv_filename, csv_filename)
 	end
 end
 
-def has_campusexplorer_data? (row, source_data)
-	# => YES -> if the row:
-	# has Lead Request Users
-	# has Lead Users 
-	# has Revenue
-	# AND
-	# doesn't have a curly brace (which means it was a test click) 
+def has_campusexplorer_data? row
+	sourcecode = row["Source Code"]
 	(row['Lead Users'] != "0" ||
 	row['Lead Request Users'] != "0" ||
-	row['Unreconciled Publisher Total Revenue'] != "0.00") &&
-	!source_data[:keyword].include?("{")
+  row['Unreconciled Publisher Total Revenue'] != "0.00") &&
+  sourcecode != nil &&
+  sourcecode != "sa-50216D3D" &&
+  !sourcecode.include?("{") &&
+  sourcecode != ""
 end
 
 def process_source_code (sourcecode)
@@ -616,7 +615,7 @@ def process_source_code (sourcecode)
 	end		
 
 	# Decode Match Type
-	match_type = sourcecode.string_between_markers("_m*", "_").inspect
+	match_type = sourcecode.string_between_markers("_m*", "_")
 	case match_type
 	when "e"
 		match_type = "Exact"
@@ -626,13 +625,16 @@ def process_source_code (sourcecode)
 		match_type = "Broad"
 	end
 
+	organic = (organic? sourcecode) ? "organic" : "paid"
+
 	# Decode Network Type
 	network = sourcecode.string_between_markers "_src*", "_"
 	network = "adwords" if network.nil?
 	network.gsub!("-sitelink", "")
-
-
-	organic = organic? sourcecode ? "organic" : "paid"
+	# Clear network if it is detected as organic
+	if organic? sourcecode 
+		network = ""
+	end
 
 	# Break down ad position
 	position_data = sourcecode.string_between_markers "_p*", "_"
@@ -660,14 +662,17 @@ def process_source_code (sourcecode)
 		widget_location = "Content CTA Lightbox"
 	end
 
+	keyword = (sourcecode.string_between_markers "_k*", "_")
+	keyword = "'" + keyword + "'" unless keyword.nil?
+
 	{
-		source: (sourcecode.string_between_markers "_src*", "_"),
+		source: (sourcecode.string_between_markers "_src*", "_") || "",
 		campaign_id: (sourcecode.string_between_markers "_x*", "_") || "",
-		device: device,
-		device2: (sourcecode.string_between_markers "_d2*", "_"),
-		keyword: (sourcecode.string_between_markers "_k*", "_"),
-		match: match_type,
-		ad_id: sourcecode.string_between_markers("_c*", "_"),
+		device: device || "",
+		device2: (sourcecode.string_between_markers "_d2*", "_") || "",
+		keyword: keyword || "",
+		match: match_type || "",
+		ad_id: sourcecode.string_between_markers("_c*", "_") || "",
 		ad_page: ad_page,
 		ad_top_side: ad_top_side,
 		ad_position: ad_position,
@@ -677,10 +682,28 @@ def process_source_code (sourcecode)
 	}
 end
 
-def organic? source_code
+def organic? sourcecode
 	# Does it have a valuetrack tag (i.e. d* for desktop/mobile)?
 	# If yes, then it is not organic.  If no, then it is.
-	sourcecode.string_between_markers "_d*", "_" ? false : true
+	if sourcecode.include?("_d*") || sourcecode.include?("-d*")
+		return false
+	# If no, does it have uscnaclassesonlne.com or lpnprogramshq.com in the source?
+	elsif ( sourcecode.include?("uscnaclassesonline.com") || 
+			    sourcecode.include?("lpnprogramshq.com") ||
+					(sourcecode == "sa-50216D3D-RightSidebarCNA") ||
+					(sourcecode == "sa-50216D3D-RightSidebarLPN") ||
+					(sourcecode == "sa-50216D3D-ContentCTAButtonCNA") ||
+					(sourcecode == "sa-50216D3D-ContentCTAButtonLPN") ||
+					(sourcecode == "sa-50216D3D-RightSidebarCNA-") ||
+					(sourcecode == "sa-50216D3D-RightSidebarLPN-") ||
+					(sourcecode == "sa-50216D3D-ContentCTAButtonCNA-") ||
+					(sourcecode == "sa-50216D3D-ContentCTAButtonLPN-"))
+	# If yes, then it is organic
+		return true
+	else 
+		# If none of these apply, then it is a summary row.
+		return false
+	end
 end
 
 def clean_up_directory
