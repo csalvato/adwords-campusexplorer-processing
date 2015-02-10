@@ -270,12 +270,12 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 	earliest_bing_imp_share_date = bing_imp_share_data.min{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 
 
-	# if earliest_adwords_ad_date != earliest_bing_ad_date ||  
-	# 	 earliest_adwords_ad_date != earliest_revenue_date ||
-	# 	 earliest_adwords_ad_date != earliest_adwords_imp_share_date ||
-	# 	 earliest_adwords_ad_date != earliest_bing_imp_share_date
-	# 	raise Exception, "All files do not start on the same date"
-	# end
+	if earliest_adwords_ad_date != earliest_bing_ad_date ||  
+		 earliest_adwords_ad_date != earliest_revenue_date ||
+		 earliest_adwords_ad_date != earliest_adwords_imp_share_date ||
+		 earliest_adwords_ad_date != earliest_bing_imp_share_date
+		raise Exception, "All files do not start on the same date"
+	end
 	
 	earliest_date = earliest_adwords_ad_date
 	
@@ -287,12 +287,12 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 	latest_bing_date = bing_ad_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 	latest_bing_imp_share_date = bing_imp_share_data.max{ |a_row, b_row| Date.parse(a_row["Date"]) <=> Date.parse(b_row["Date"]) }["Date"]
 
-	# if latest_adwords_date != latest_bing_date || 
-	# 	 latest_adwords_date != latest_revenue_date ||
-	# 	 latest_adwords_date != latest_adwords_imp_share_date ||
-	# 	 latest_adwords_date != latest_bing_imp_share_date
-	# 	raise Exception, "All files do not end on the same date"
-	# end
+	if latest_adwords_date != latest_bing_date || 
+		 latest_adwords_date != latest_revenue_date ||
+		 latest_adwords_date != latest_adwords_imp_share_date ||
+		 latest_adwords_date != latest_bing_imp_share_date
+		raise Exception, "All files do not end on the same date"
+	end
 	
 	latest_date = latest_adwords_date
 
