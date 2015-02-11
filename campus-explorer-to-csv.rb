@@ -743,7 +743,7 @@ def update_database
 		exit
 	end
 
-	combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "adwords-campaigns.csv", "bing-campaigns.csv", "Koodlu Database test.csv")
+	combine_all_files("Campus Explorer Revenue.csv","adwords-ads.csv", "bing-ads.csv", "adwords-campaigns.csv", "bing-campaigns.csv", "Koodlu Database.csv")
 	# clean_up_directory
 end
 
