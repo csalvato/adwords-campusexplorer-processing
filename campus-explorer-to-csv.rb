@@ -9,6 +9,7 @@ require 'iconv'
 require 'date'
 require 'roo'
 require 'fileutils'
+require 'rails'
 
 class String
   def string_between_markers marker1, marker2
@@ -481,7 +482,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Avg. Position"],
 						row["Position Weight"],
 						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
-						Date.parse(row["Date"]).strftime('%Y-%m-%d'),
+						Date.parse(row["Date"]).strftime('%Y-%m-%d'), # W/C Date
 						row["Device2"] || row["Device"],
 						niche || "{Not Found}",
 						seed || "{Not Found}",
