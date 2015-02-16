@@ -482,7 +482,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 						row["Avg. Position"],
 						row["Position Weight"],
 						Date.parse(row["Date"]).strftime('%Y-%m-%d %a'),
-						Date.parse(row["Date"]).strftime('%Y-%m-%d'), # W/C Date
+						row["Date"]).to_date.beginning_of_week.strftime('%Y-%m-%d'), # W/C Date
 						row["Device2"] || row["Device"],
 						niche || "{Not Found}",
 						seed || "{Not Found}",
