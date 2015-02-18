@@ -298,12 +298,13 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 	latest_date = latest_adwords_date
 
 	# Select (i.e keep) those rows whose date is earlier than the earliest date in the new file
+	# 							and those rows whose date is less than the latest date in the new file
 	# (note, this delete all other rows...so this removed overlap)
 	database_data = database_data.select do |row| 
 		if row.header_row? 
 			true
 		else
-			row["Date"] ? Date.parse(row["Date"]) < Date.parse(earliest_date) : false
+			row["Date"] ? Date.parse(row["Date"]) < Date.parse(earliest_date) || Date.parse(row["Date"]) > Date.parse(latest_date) : false
 		end
 	end
 
@@ -750,6 +751,6 @@ end
 
 update_database
 
-puts "Script Complete!"
 'say "Script Finished!"'
+puts "Script Complete!"
 puts "Time elapsed: #{Time.now - start_time} seconds"
