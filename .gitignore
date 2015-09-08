@@ -1,5 +1,6 @@
 *.csv
-!Koodlu Database.csv
-!Koodlu Database test.csv
+*!Koodlu Database.csv
+*!Koodlu Database test.csv
 *.xls
+*.xlsx
 .DS_Store
