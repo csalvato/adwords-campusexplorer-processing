@@ -275,7 +275,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		 earliest_adwords_ad_date != earliest_revenue_date ||
 		 earliest_adwords_ad_date != earliest_adwords_imp_share_date ||
 		 earliest_adwords_ad_date != earliest_bing_imp_share_date
-		raise Exception, "All files do not start on the same date"
+		raise Exception, "All files do not start on the same date" 
 	end
 	
 	earliest_date = earliest_adwords_ad_date
@@ -292,7 +292,7 @@ def combine_all_files(revenue_data_filename, adwords_ad_data_filename, bing_ad_d
 		 latest_adwords_date != latest_revenue_date ||
 		 latest_adwords_date != latest_adwords_imp_share_date ||
 		 latest_adwords_date != latest_bing_imp_share_date
-		raise Exception, "All files do not end on the same date"
+		# raise Exception, "All files do not end on the same date" #Not strictly necessary
 	end
 	
 	latest_date = latest_adwords_date
